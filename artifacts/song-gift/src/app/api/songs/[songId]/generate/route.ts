@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server";
+import { configurationError, jsonError } from "@/lib/server/http";
+import { startApiframeGeneration } from "@/lib/server/apiframe";
+import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
+import { serializeSong } from "@/lib/server/songs";
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ songId: string }> },
+) {
+  try {
+    const user = await getRequestUser(request);
+    if (!user) return jsonError("Sign in before generating your song.", 401);
+    const { songId } = await context.params;
+    const supabase = getAdminSupabase();
+    const { data: song, error } = await supabase
+      .from("songs")
+      .select("*")
+      .eq("id", songId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error) return jsonError("The song could not be loaded.", 500);
+    if (!song) return jsonError("Song not found.", 404);
+    if (!song.order_id) return jsonError("Complete checkout before generating your song.", 402);
+    if (!song.lyrics_approved || !song.lyrics) {
+      return jsonError("Review and approve the lyrics before generating audio.", 409);
+    }
+    if (song.status === "generating_song" || song.status === "completed") {
+      return NextResponse.json(serializeSong(song));
+    }
+
+    const taskId = await startApiframeGeneration({
+      lyrics: song.lyrics,
+      recipientName: song.recipient_name,
+      occasion: song.occasion,
+      mood: song.mood,
+      genre: song.genre,
+    });
+    const { data: updated, error: updateError } = await supabase
+      .from("songs")
+      .update({
+        apiframe_task_id: taskId,
+        status: "generating_song",
+      })
+      .eq("id", song.id)
+      .select("*")
+      .single();
+    if (updateError) return jsonError("Song generation started but its status could not be saved.", 500);
+    return NextResponse.json(serializeSong(updated));
+  } catch (error) {
+    return configurationError(error) ?? jsonError("Song generation could not be started.", 502);
+  }
+}

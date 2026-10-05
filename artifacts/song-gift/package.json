@@ -1,0 +1,31 @@
+{
+  "name": "@workspace/song-gift",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port $PORT",
+    "build": "next build",
+    "serve": "next start --hostname 0.0.0.0 --port $PORT",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "@tanstack/react-query": "catalog:",
+    "@workspace/api-client-react": "workspace:*",
+    "framer-motion": "catalog:",
+    "lucide-react": "catalog:",
+    "next": "15.5.27",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "catalog:",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "tailwindcss": "catalog:",
+    "typescript": "~5.9.3"
+  }
+}

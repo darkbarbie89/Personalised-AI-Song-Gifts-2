@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Song Gift"
+description = "A personalised song-gift experience where people turn a meaningful memory into a one-of-a-kind song, review the lyrics, and share the finished gift."
+version = "1.0.0"
+id = "artifacts/song-gift"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20593
+
+[services.development]
+run = "pnpm --filter @workspace/song-gift run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/song-gift", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/song-gift/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20593"
+BASE_PATH = "/"

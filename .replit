@@ -18,3 +18,13 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_SUPABASE_URL = "https://mietvsiarqyopylntewq.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZXR2c2lhcnF5b3B5bG50ZXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNjA4NjgsImV4cCI6MjEwNjczNjg2OH0.Yyn_4kRDDA6XOL9utKJ6a_LpmTZC9Tqk3U8zbZQ9q0E"
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_placeholder"
+
+[nix]
+channel = "stable-25_05"

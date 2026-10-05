@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: songs
+    description: Personal song creation, studio, and gift sharing
+  - name: billing
+    description: Stripe checkout and webhook operations
+  - name: admin
+    description: Administrator reporting
 paths:
   /healthz:
     get:
@@ -24,6 +30,219 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/session:
+    post:
+      operationId: createAuthSession
+      tags: [songs]
+      summary: Exchange a Supabase access token for secure app cookies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthSessionInput"
+      responses:
+        "200":
+          description: Session cookie set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResult"
+  /auth/session/clear:
+    post:
+      operationId: clearAuthSession
+      tags: [songs]
+      summary: Clear app session cookies
+      responses:
+        "200":
+          description: Session cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResult"
+  /create-checkout:
+    post:
+      operationId: createCheckout
+      tags: [billing]
+      summary: Create a song and start Stripe Checkout or spend an existing credit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutInput"
+      responses:
+        "200":
+          description: Checkout created or existing credit redeemed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResult"
+  /checkout/complete:
+    post:
+      operationId: completeCheckout
+      tags: [billing]
+      summary: Verify a paid Stripe session and finalize its song
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteCheckoutInput"
+      responses:
+        "200":
+          description: Paid song
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Song"
+  /generate-lyrics:
+    post:
+      operationId: generateLyrics
+      tags: [songs]
+      summary: Generate or regenerate lyrics for a paid song
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateLyricsInput"
+      responses:
+        "200":
+          description: Generated song lyrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LyricsResult"
+  /songs:
+    get:
+      operationId: listMySongs
+      tags: [songs]
+      summary: List the signed-in user's songs and remaining credits
+      responses:
+        "200":
+          description: Dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSnapshot"
+  /songs/{songId}:
+    get:
+      operationId: getSong
+      tags: [songs]
+      summary: Get one owned song and refresh its provider-generation status
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Song
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Song"
+  /songs/{songId}/lyrics:
+    patch:
+      operationId: approveLyrics
+      tags: [songs]
+      summary: Save edited, approved lyrics
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SongLyricsInput"
+      responses:
+        "200":
+          description: Updated song
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Song"
+  /generate-song:
+    post:
+      operationId: startSongGeneration
+      tags: [songs]
+      summary: Start Suno audio generation from approved lyrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSongInput"
+      responses:
+        "200":
+          description: Song generation status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Song"
+  /share/{shareToken}:
+    get:
+      operationId: getSharedSong
+      tags: [songs]
+      summary: Read a completed song gift by its public share token
+      parameters:
+        - name: shareToken
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Public share page data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedSong"
+  /admin/summary:
+    get:
+      operationId: getAdminSummary
+      tags: [admin]
+      summary: Get protected user, order, revenue, and song statistics
+      responses:
+        "200":
+          description: Admin dashboard snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
+  /webhooks/stripe:
+    post:
+      operationId: receiveStripeWebhook
+      tags: [billing]
+      summary: Receive Stripe checkout completion events
+      parameters:
+        - name: stripe-signature
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookPayload"
+      responses:
+        "200":
+          description: Webhook accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResult"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +252,318 @@ components:
           type: string
       required:
         - status
+    AuthSessionInput:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          minLength: 1
+      required: [accessToken]
+    SessionResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
+    CheckoutInput:
+      type: object
+      properties:
+        recipientName:
+          type: string
+          minLength: 1
+          maxLength: 80
+        relationship:
+          type: string
+          minLength: 1
+          maxLength: 40
+        occasion:
+          type: string
+          minLength: 1
+          maxLength: 60
+        story:
+          type: string
+          minLength: 50
+          maxLength: 5000
+        mood:
+          type: string
+          minLength: 1
+          maxLength: 40
+        genre:
+          type: string
+          minLength: 1
+          maxLength: 40
+        package:
+          type: string
+          enum: [single, triple, collection]
+        useCredit:
+          type: boolean
+      required:
+        - recipientName
+        - relationship
+        - occasion
+        - story
+        - mood
+        - genre
+        - package
+        - useCredit
+    CheckoutResult:
+      type: object
+      properties:
+        songId:
+          type: string
+          format: uuid
+        checkoutUrl:
+          type: ["string", "null"]
+          format: uri
+        creditsRemaining:
+          type: integer
+      required: [songId, checkoutUrl, creditsRemaining]
+    CompleteCheckoutInput:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          minLength: 5
+      required: [sessionId]
+    GenerateLyricsInput:
+      type: object
+      properties:
+        songId:
+          type: string
+          format: uuid
+        recipientName:
+          type: string
+          minLength: 1
+          maxLength: 80
+        relationship:
+          type: string
+          minLength: 1
+          maxLength: 40
+        occasion:
+          type: string
+          minLength: 1
+          maxLength: 60
+        story:
+          type: string
+          minLength: 50
+          maxLength: 5000
+        mood:
+          type: string
+          minLength: 1
+          maxLength: 40
+        genre:
+          type: string
+          minLength: 1
+          maxLength: 40
+        tryAgain:
+          type: boolean
+      required:
+        - songId
+        - recipientName
+        - relationship
+        - occasion
+        - story
+        - mood
+        - genre
+        - tryAgain
+    GenerateSongInput:
+      type: object
+      properties:
+        songId:
+          type: string
+          format: uuid
+        lyrics:
+          type: string
+          minLength: 20
+          maxLength: 5000
+        genre:
+          type: string
+          minLength: 1
+          maxLength: 40
+        mood:
+          type: string
+          minLength: 1
+          maxLength: 40
+      required: [songId, lyrics, genre, mood]
+    LyricsResult:
+      type: object
+      properties:
+        lyrics:
+          type: string
+          minLength: 1
+      required: [lyrics]
+    SongLyricsInput:
+      type: object
+      properties:
+        lyrics:
+          type: string
+          minLength: 20
+          maxLength: 5000
+      required: [lyrics]
+    Song:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientName:
+          type: string
+        relationship:
+          type: string
+        occasion:
+          type: string
+        story:
+          type: string
+        mood:
+          type: string
+        genre:
+          type: string
+        lyrics:
+          type: ["string", "null"]
+        lyricsApproved:
+          type: boolean
+        songUrl:
+          type: ["string", "null"]
+          format: uri
+        alternateSongUrl:
+          type: ["string", "null"]
+          format: uri
+        coverArtUrl:
+          type: ["string", "null"]
+          format: uri
+        shareToken:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [draft, generating_lyrics, lyrics_ready, generating_song, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - recipientName
+        - relationship
+        - occasion
+        - story
+        - mood
+        - genre
+        - lyrics
+        - lyricsApproved
+        - songUrl
+        - alternateSongUrl
+        - coverArtUrl
+        - shareToken
+        - status
+        - createdAt
+    DashboardSnapshot:
+      type: object
+      properties:
+        songs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Song"
+        creditsRemaining:
+          type: integer
+        totalSongs:
+          type: integer
+        completedSongs:
+          type: integer
+      required: [songs, creditsRemaining, totalSongs, completedSongs]
+    SharedSong:
+      type: object
+      properties:
+        recipientName:
+          type: string
+        senderName:
+          type: string
+        occasion:
+          type: string
+        songUrl:
+          type: ["string", "null"]
+          format: uri
+        alternateSongUrl:
+          type: ["string", "null"]
+          format: uri
+        coverArtUrl:
+          type: ["string", "null"]
+          format: uri
+        title:
+          type: string
+        status:
+          type: string
+          enum: [generating_song, completed]
+      required:
+        - recipientName
+        - senderName
+        - occasion
+        - songUrl
+        - alternateSongUrl
+        - coverArtUrl
+        - title
+        - status
+    AdminOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        package:
+          type: string
+        amountPaid:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, package, amountPaid, status, createdAt]
+    AdminSong:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientName:
+          type: string
+        occasion:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, recipientName, occasion, status, createdAt]
+    AdminSummary:
+      type: object
+      properties:
+        users:
+          type: integer
+        orders:
+          type: integer
+        revenue:
+          type: integer
+        songs:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrder"
+        recentSongs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminSong"
+      required: [users, orders, revenue, songs, recentOrders, recentSongs]
+    WebhookResult:
+      type: object
+      properties:
+        received:
+          type: boolean
+      required: [received]
+    WebhookPayload:
+      type: object
+      additionalProperties: true
 
