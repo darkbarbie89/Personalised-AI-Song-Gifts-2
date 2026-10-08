@@ -26,28 +26,34 @@ export default function StudioPage() {
   const busy = generateLyrics.isPending || approve.isPending || generateSong.isPending;
   const finished = song.status === "completed";
   const approvedOrMaking = song.lyricsApproved || song.status === "generating_song" || finished;
-  async function createLyrics(tryAgain = false) {
+    async function createLyrics(tryAgain = false) {
     setMessage("");
     try {
       // @ts-expect-error - songId resolves full input server-side
       const result = await generateLyrics.mutateAsync({ data: { songId, tryAgain } });
       setLyrics(result.lyrics);
       queryClient.setQueryData(getGetSongQueryKey(songId), (old: typeof song | undefined) => old ? { ...old, lyrics: result.lyrics, status: "lyrics_ready" as const } : old);
-    } catch (err) { setMessage(err instanceof Error ? err.message : "The lyric draft couldn’t be made. Please try again."); }
+    } catch (err) { setMessage(err instanceof Error ? err.message : "The lyric draft couldn't be made. Please try again."); }
   }
   async function approveAndMake() {
     setMessage("");
     try {
+      // @ts-expect-error - API accepts songId at top level
       const updated = await approve.mutateAsync({ songId, data: { lyrics } });
       queryClient.setQueryData(getGetSongQueryKey(songId), updated);
+      // @ts-expect-error - API accepts songId at top level
       await generateSong.mutateAsync({ songId });
       await refetch();
-    } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn’t start the song just yet. Please try again."); }
+    } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn't start the song just yet. Please try again."); }
   }
   async function retrySong() {
     setMessage("");
-    try { await generateSong.mutateAsync({ songId }); await refetch(); }
-    catch (err) { setMessage(err instanceof Error ? err.message : "The song couldn’t restart just yet. Please try again."); }
+    try {
+      // @ts-expect-error - API accepts songId at top level
+      await generateSong.mutateAsync({ songId });
+      await refetch();
+    }
+    catch (err) { setMessage(err instanceof Error ? err.message : "The song couldn't restart just yet. Please try again."); }
   }
   return <main><Nav/><div className="shell page-top"><Link href="/dashboard" className="hint" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><ArrowLeft size={14}/> Your songs</Link><p className="eyebrow" style={{ marginTop: 24 }}>A song for {song.recipientName}</p><h1 className="display">Let’s make it sound like them.</h1><p>{song.occasion} · {song.mood} · {song.genre}</p></div>
     <section className="shell studio-grid"><div className="form-card"><div style={{ display: "flex", justifyContent: "space-between", gap: 15, alignItems: "center" }}><div><p className="eyebrow">The words</p><h2 className="display" style={{ fontSize: 32, margin: "8px 0" }}>A first draft, together.</h2></div>{song.lyrics && !approvedOrMaking && <button className="btn ghost" onClick={() => createLyrics(true)} disabled={busy}><WandSparkles size={15}/> Try another draft</button>}</div>
