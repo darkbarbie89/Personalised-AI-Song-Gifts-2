@@ -38,7 +38,6 @@ export default function StudioPage() {
   async function approveAndMake() {
     setMessage("");
     try {
-      // @ts-expect-error - API accepts songId at top level
       const updated = await approve.mutateAsync({ songId, data: { lyrics } });
       queryClient.setQueryData(getGetSongQueryKey(songId), updated);
       // @ts-expect-error - API accepts songId at top level
