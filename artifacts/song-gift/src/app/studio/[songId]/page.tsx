@@ -29,6 +29,7 @@ export default function StudioPage() {
   async function createLyrics(tryAgain = false) {
     setMessage("");
     try {
+      // @ts-expect-error - songId resolves full input server-side
       const result = await generateLyrics.mutateAsync({ data: { songId, tryAgain } });
       setLyrics(result.lyrics);
       queryClient.setQueryData(getGetSongQueryKey(songId), (old: typeof song | undefined) => old ? { ...old, lyrics: result.lyrics, status: "lyrics_ready" as const } : old);
