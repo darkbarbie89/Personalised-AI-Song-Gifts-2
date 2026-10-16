@@ -30,7 +30,7 @@ const environment = {
   STRIPE_SECRET_KEY: "sk_test_fixture_not_real",
   STRIPE_WEBHOOK_SECRET: "whsec_fixture_not_real",
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_fixture_not_real",
-  ANTHROPIC_API_KEY: "test-only-lyric-key",
+  OPENAI_API_KEY: "test-only-lyric-key",
   APIFRAME_API_KEY: "test-only-music-key",
   NEXT_PUBLIC_BASE_URL: "https://songgift.test",
 };
@@ -133,9 +133,15 @@ async function intercept(input: RequestInfo | URL, init?: RequestInit): Promise<
     const session = sessions.get(url.pathname.split("/").pop()!);
     return session ? json(session) : json({ error: "No session" }, 404);
   }
-  if (url.hostname === "api.anthropic.com") {
+  if (url.hostname === "api.openai.com") {
     lyricCalls++;
-    return lyricFailure ? json({ error: "Invalid test key" }, 401) : json({ content: [{ type: "text", text: lyrics }], stop_reason: "end_turn" });
+    assert.equal(headers.get("authorization"), `Bearer ${process.env.OPENAI_API_KEY}`);
+    const completion = JSON.parse(body);
+    assert.equal(completion.model, "gpt-4o-mini");
+    assert.equal(completion.max_completion_tokens, 1200);
+    return lyricFailure
+      ? json({ error: { message: "Invalid test key" } }, 401)
+      : json({ choices: [{ message: { content: lyrics }, finish_reason: "stop" }] });
   }
   if (url.hostname === "api.apiframe.ai") {
     if (url.pathname === "/v2/music/generate") {
