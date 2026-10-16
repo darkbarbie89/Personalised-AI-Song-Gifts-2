@@ -145,6 +145,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Song"
+  /songs/{songId}/video-assets:
+    get:
+      operationId: getSongVideoAsset
+      tags: [songs]
+      summary: Load an owned completed song's audio or cover for browser video export
+      description: Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: asset
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [audio, cover]
+      responses:
+        "200":
+          description: Media bytes with their original content type
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid asset or song identifier
+        "401":
+          description: Sign-in required
+        "404":
+          description: Owned song or requested media not found
+        "409":
+          description: Song has not finished generating
+        "502":
+          description: Stored media could not be retrieved
   /songs/{songId}/lyrics:
     patch:
       operationId: approveLyrics

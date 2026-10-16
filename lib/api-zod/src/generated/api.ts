@@ -197,6 +197,21 @@ export const GetSongResponse = zod.object({
 
 
 /**
+ * Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
+ * @summary Load an owned completed song's audio or cover for browser video export
+ */
+export const GetSongVideoAssetParams = zod.object({
+  "songId": zod.coerce.string().uuid()
+})
+
+export const GetSongVideoAssetQueryParams = zod.object({
+  "asset": zod.enum(['audio', 'cover'])
+})
+
+export const GetSongVideoAssetResponse = zod.unknown()
+
+
+/**
  * @summary Save edited, approved lyrics
  */
 export const ApproveLyricsParams = zod.object({

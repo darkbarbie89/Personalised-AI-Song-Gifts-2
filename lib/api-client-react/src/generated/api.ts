@@ -28,6 +28,7 @@ import type {
   DashboardSnapshot,
   GenerateLyricsInput,
   GenerateSongInput,
+  GetSongVideoAssetParams,
   HealthStatus,
   LyricsResult,
   SessionResult,
@@ -711,6 +712,96 @@ export function useGetSong<TData = Awaited<ReturnType<typeof getSong>>, TError =
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSongQueryOptions(songId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetSongVideoAssetUrl = (songId: string,
+    params: GetSongVideoAssetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/songs/${songId}/video-assets?${stringifiedParams}` : `/api/songs/${songId}/video-assets`
+}
+
+/**
+ * Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
+ * @summary Load an owned completed song's audio or cover for browser video export
+ */
+export const getSongVideoAsset = async (songId: string,
+    params: GetSongVideoAssetParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetSongVideoAssetUrl(songId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSongVideoAssetQueryKey = (songId: string,
+    params?: GetSongVideoAssetParams,) => {
+    return [
+    `/api/songs/${songId}/video-assets`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSongVideoAssetQueryOptions = <TData = Awaited<ReturnType<typeof getSongVideoAsset>>, TError = ErrorType<void>>(songId: string,
+    params: GetSongVideoAssetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSongVideoAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSongVideoAssetQueryKey(songId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSongVideoAsset>>> = ({ signal }) => getSongVideoAsset(songId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: songId !== null && songId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSongVideoAsset>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSongVideoAssetQueryResult = NonNullable<Awaited<ReturnType<typeof getSongVideoAsset>>>
+export type GetSongVideoAssetQueryError = ErrorType<void>
+
+
+/**
+ * @summary Load an owned completed song's audio or cover for browser video export
+ */
+
+export function useGetSongVideoAsset<TData = Awaited<ReturnType<typeof getSongVideoAsset>>, TError = ErrorType<void>>(
+ songId: string,
+    params: GetSongVideoAssetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSongVideoAsset>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSongVideoAssetQueryOptions(songId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

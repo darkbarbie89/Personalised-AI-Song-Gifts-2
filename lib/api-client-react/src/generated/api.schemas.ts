@@ -236,3 +236,15 @@ export interface WebhookResult {
 
 export interface WebhookPayload { [key: string]: unknown }
 
+export type GetSongVideoAssetParams = {
+asset: GetSongVideoAssetAsset;
+};
+
+export type GetSongVideoAssetAsset = typeof GetSongVideoAssetAsset[keyof typeof GetSongVideoAssetAsset];
+
+
+export const GetSongVideoAssetAsset = {
+  audio: 'audio',
+  cover: 'cover',
+} as const;
+

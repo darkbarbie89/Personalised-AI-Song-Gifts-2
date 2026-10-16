@@ -1,6 +1,9 @@
 {
   "version": 1,
   "functions": {
+    "/api/songs/[songId]/video-assets": {
+      "maxDuration": 60
+    },
     "/api/songs/[songId]": {
       "maxDuration": 60
     }

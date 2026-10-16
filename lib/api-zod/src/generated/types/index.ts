@@ -17,6 +17,8 @@ export * from './completeCheckoutInput';
 export * from './dashboardSnapshot';
 export * from './generateLyricsInput';
 export * from './generateSongInput';
+export * from './getSongVideoAssetAsset';
+export * from './getSongVideoAssetParams';
 export * from './healthStatus';
 export * from './lyricsResult';
 export * from './sessionResult';

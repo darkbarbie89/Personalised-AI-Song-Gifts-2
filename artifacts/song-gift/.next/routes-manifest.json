@@ -44,6 +44,14 @@
       "namedRegex": "^/api/songs/(?<nxtPsongId>[^/]+?)/lyrics(?:/)?$"
     },
     {
+      "page": "/api/songs/[songId]/video-assets",
+      "regex": "^/api/songs/([^/]+?)/video\\-assets(?:/)?$",
+      "routeKeys": {
+        "nxtPsongId": "nxtPsongId"
+      },
+      "namedRegex": "^/api/songs/(?<nxtPsongId>[^/]+?)/video\\-assets(?:/)?$"
+    },
+    {
       "page": "/listen/[shareToken]",
       "regex": "^/listen/([^/]+?)(?:/)?$",
       "routeKeys": {

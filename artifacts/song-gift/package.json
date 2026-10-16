@@ -15,6 +15,7 @@
     "@workspace/api-client-react": "workspace:*",
     "framer-motion": "catalog:",
     "lucide-react": "catalog:",
+    "mediabunny": "^1.61.4",
     "next": "15.5.27",
     "react": "catalog:",
     "react-dom": "catalog:",

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Check, LoaderCircle, Music2, WandSparkles } from "lucide-react";
 import { getGetSongQueryKey, useApproveLyrics, useGenerateLyrics, useGetSong, useStartSongGeneration } from "@workspace/api-client-react";
+import LyricVideoMaker from "@/components/lyric-video-maker";
 import { ErrorState, Footer, LoadingState, Nav } from "@/components/shared";
 
 export default function StudioPage() {
@@ -84,5 +85,5 @@ export default function StudioPage() {
       {song.status === "generating_song" && <div className="notice">Your song is taking shape now. This page will update as soon as it’s ready.</div>}
       {song.status === "failed" && <div className="notice">The song needs another moment. Your approved lyrics are safe.<button className="btn secondary" style={{ display: "flex", marginTop: 12 }} onClick={retrySong} disabled={busy}>{generateSong.isPending ? "Starting again…" : "Try generating again"}</button></div>}
       {finished && song.songUrl && <div><p className="eyebrow">Ready to listen</p><audio className="audio-player" controls src={song.songUrl}>Your browser does not support audio playback.</audio>{song.alternateSongUrl && <><p className="hint">An alternate take</p><audio className="audio-player" controls src={song.alternateSongUrl}>Your browser does not support audio playback.</audio></>}<Link className="btn" href={`/listen/${song.shareToken}`}>Open gift page <ArrowLeft size={14} style={{ transform: "rotate(180deg)" }}/></Link></div>}
-    </aside></section><Footer/></main>;
+    </aside></section>{song.status === "completed" && song.songUrl && song.lyrics && <LyricVideoMaker song={song}/>}<Footer/></main>;
 }
