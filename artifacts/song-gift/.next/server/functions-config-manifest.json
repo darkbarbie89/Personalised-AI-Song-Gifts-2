@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/songs/[songId]": {
+      "maxDuration": 60
+    }
+  }
+}

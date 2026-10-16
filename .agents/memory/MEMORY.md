@@ -1,1 +1,2 @@
 - [Homepage direction](homepage-direction.md) — user wants a modern, vibrant homepage that feels like a real SaaS, not a project.
+- [Next.js cache isolation](next-cache-isolation.md) — keep development and production outputs separate to avoid preview module-loading crashes.
