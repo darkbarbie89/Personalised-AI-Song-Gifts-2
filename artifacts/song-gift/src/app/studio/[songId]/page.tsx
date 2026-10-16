@@ -29,7 +29,16 @@ export default function StudioPage() {
   async function createLyrics(tryAgain = false) {
     setMessage("");
     try {
-      const result = await generateLyrics.mutateAsync({ data: { songId, tryAgain } });
+      const result = await generateLyrics.mutateAsync({ data: {
+        songId,
+        recipientName: song.recipientName,
+        relationship: song.relationship,
+        occasion: song.occasion,
+        story: song.story,
+        mood: song.mood,
+        genre: song.genre,
+        tryAgain,
+      } });
       setLyrics(result.lyrics);
       queryClient.setQueryData(getGetSongQueryKey(songId), (old: typeof song | undefined) => old ? { ...old, lyrics: result.lyrics, status: "lyrics_ready" as const } : old);
     } catch (err) { setMessage(err instanceof Error ? err.message : "The lyric draft couldn’t be made. Please try again."); }
@@ -39,13 +48,26 @@ export default function StudioPage() {
     try {
       const updated = await approve.mutateAsync({ songId, data: { lyrics } });
       queryClient.setQueryData(getGetSongQueryKey(songId), updated);
-      await generateSong.mutateAsync({ songId });
+      await generateSong.mutateAsync({ data: {
+        songId,
+        lyrics: updated.lyrics ?? lyrics,
+        genre: updated.genre,
+        mood: updated.mood,
+      } });
       await refetch();
     } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn’t start the song just yet. Please try again."); }
   }
   async function retrySong() {
     setMessage("");
-    try { await generateSong.mutateAsync({ songId }); await refetch(); }
+    try {
+      await generateSong.mutateAsync({ data: {
+        songId,
+        lyrics: song.lyrics ?? lyrics,
+        genre: song.genre,
+        mood: song.mood,
+      } });
+      await refetch();
+    }
     catch (err) { setMessage(err instanceof Error ? err.message : "The song couldn’t restart just yet. Please try again."); }
   }
   return <main><Nav/><div className="shell page-top"><Link href="/dashboard" className="hint" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><ArrowLeft size={14}/> Your songs</Link><p className="eyebrow" style={{ marginTop: 24 }}>A song for {song.recipientName}</p><h1 className="display">Let’s make it sound like them.</h1><p>{song.occasion} · {song.mood} · {song.genre}</p></div>

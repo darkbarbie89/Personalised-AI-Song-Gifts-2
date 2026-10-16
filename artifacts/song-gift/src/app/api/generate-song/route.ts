@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generateSongSchema } from "@/lib/server/schemas";
 import { configurationError, jsonError } from "@/lib/server/http";
 import { startApiframeGeneration } from "@/lib/server/apiframe";
 import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 import { serializeSong } from "@/lib/server/songs";
 
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ songId: string }> },
-) {
+export async function POST(request: NextRequest) {
   try {
     const user = await getRequestUser(request);
     if (!user) return jsonError("Sign in before generating your song.", 401);
-    const { songId } = await context.params;
+
+    const parsed = generateSongSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) return jsonError("Provide the approved lyrics and song details.", 400);
+
     const supabase = getAdminSupabase();
     const { data: song, error } = await supabase
       .from("songs")
       .select("*")
-      .eq("id", songId)
+      .eq("id", parsed.data.songId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (error) return jsonError("The song could not be loaded.", 500);
@@ -24,6 +25,13 @@ export async function POST(
     if (!song.order_id) return jsonError("Complete checkout before generating your song.", 402);
     if (!song.lyrics_approved || !song.lyrics) {
       return jsonError("Review and approve the lyrics before generating audio.", 409);
+    }
+    if (
+      parsed.data.lyrics !== song.lyrics ||
+      parsed.data.genre !== song.genre ||
+      parsed.data.mood !== song.mood
+    ) {
+      return jsonError("The approved song details changed. Refresh the studio and try again.", 409);
     }
     if (song.status === "generating_song" || song.status === "completed") {
       return NextResponse.json(serializeSong(song));

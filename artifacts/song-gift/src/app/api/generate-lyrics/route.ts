@@ -22,6 +22,16 @@ export async function POST(request: NextRequest) {
     if (lookupError) return jsonError("The song could not be loaded.", 500);
     if (!song) return jsonError("Song not found.", 404);
     if (!song.order_id) return jsonError("Complete checkout before generating lyrics.", 402);
+    if (
+      parsed.data.recipientName !== song.recipient_name ||
+      parsed.data.relationship !== song.relationship ||
+      parsed.data.occasion !== song.occasion ||
+      parsed.data.story !== song.story ||
+      parsed.data.mood !== song.mood ||
+      parsed.data.genre !== song.genre
+    ) {
+      return jsonError("The song details changed. Refresh the studio and try again.", 409);
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return jsonError("Anthropic server configuration is missing.", 503);

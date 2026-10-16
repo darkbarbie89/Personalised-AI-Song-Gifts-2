@@ -164,19 +164,19 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-// Validate ../../src/app/api/share/[shareToken]/route.ts
+// Validate ../../src/app/api/generate-song/route.ts
 {
-  type __IsExpected<Specific extends RouteHandlerConfig<"/api/share/[shareToken]">> = Specific
-  const handler = {} as typeof import("../../src/app/api/share/[shareToken]/route.js")
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/generate-song">> = Specific
+  const handler = {} as typeof import("../../src/app/api/generate-song/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
 }
 
-// Validate ../../src/app/api/songs/[songId]/generate/route.ts
+// Validate ../../src/app/api/share/[shareToken]/route.ts
 {
-  type __IsExpected<Specific extends RouteHandlerConfig<"/api/songs/[songId]/generate">> = Specific
-  const handler = {} as typeof import("../../src/app/api/songs/[songId]/generate/route.js")
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/share/[shareToken]">> = Specific
+  const handler = {} as typeof import("../../src/app/api/share/[shareToken]/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
