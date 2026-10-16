@@ -1,3 +1,22 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/session/clear/route": "app/api/auth/session/clear/route.js",
+  "/api/auth/session/route": "app/api/auth/session/route.js",
+  "/api/checkout/complete/route": "app/api/checkout/complete/route.js",
+  "/api/create-checkout/route": "app/api/create-checkout/route.js",
+  "/api/generate-lyrics/route": "app/api/generate-lyrics/route.js",
+  "/api/webhooks/stripe/route": "app/api/webhooks/stripe/route.js",
+  "/api/songs/[songId]/generate/route": "app/api/songs/[songId]/generate/route.js",
+  "/api/songs/[songId]/lyrics/route": "app/api/songs/[songId]/lyrics/route.js",
+  "/api/songs/route": "app/api/songs/route.js",
+  "/api/admin/summary/route": "app/api/admin/summary/route.js",
+  "/api/share/[shareToken]/route": "app/api/share/[shareToken]/route.js",
+  "/api/songs/[songId]/route": "app/api/songs/[songId]/route.js",
+  "/account/page": "app/account/page.js",
+  "/admin/page": "app/admin/page.js",
+  "/listen/[shareToken]/page": "app/listen/[shareToken]/page.js",
+  "/create/page": "app/create/page.js",
+  "/studio/[songId]/page": "app/studio/[songId]/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/page": "app/page.js"
 }
