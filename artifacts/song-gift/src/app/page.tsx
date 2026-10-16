@@ -15,6 +15,10 @@ const GENRES = [
   { id: "Electronic", tempo: "0.7s" },
 ] as const;
 const MOODS = ["Happy", "Romantic", "Emotional", "Playful", "Calm"] as const;
+const sampleSongAudio = (filename: string) => {
+  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  return projectUrl ? `${projectUrl}/storage/v1/object/public/song-assets/samples/${filename}` : undefined;
+};
 
 const CLOSERS: Record<(typeof OCCASIONS)[number], [string, string]> = {
   Birthday: ["Another year around the sun with you", "So here's your song, and every year is a gift"],
@@ -115,10 +119,10 @@ const STEPS = [
 ];
 
 const SONGS = [
-  { tag: "Birthday for Mum", title: "This One's For You, Mama", meta: "Warm & Heartfelt · Acoustic Pop", c: "tomato", image: "/images/birthday-gift.jpg", alt: "A woman opening a birthday gift" },
-  { tag: "Wedding Anniversary", title: "Still You", meta: "Romantic & Tender · Soft Pop Ballad", c: "lime", image: "/images/couple-listening.jpg", alt: "A couple sharing earphones and listening together" },
-  { tag: "Best Friend", title: "Here's To Us", meta: "Fun & Upbeat · Indie Pop", c: "cream", image: "/images/friends-celebrating.jpg", alt: "Friends celebrating a birthday together" },
-  { tag: "For someone special", title: "I Carry You", meta: "Gentle & Emotional · Acoustic", c: "ink", image: "/images/generations-listening.jpg", alt: "Two people from different generations listening to music" },
+  { tag: "Birthday for Mum", title: "This One's For You, Mama", meta: "Warm & Heartfelt · Acoustic Pop", c: "tomato", image: "/images/birthday-gift.jpg", alt: "A woman opening a birthday gift", audioUrl: sampleSongAudio("this-ones-for-you-mama.mp3") },
+  { tag: "Wedding Anniversary", title: "Still You", meta: "Romantic & Tender · Soft Pop Ballad", c: "lime", image: "/images/couple-listening.jpg", alt: "A couple sharing earphones and listening together", audioUrl: sampleSongAudio("still-you.mp3") },
+  { tag: "Best Friend", title: "Here's To Us", meta: "Fun & Upbeat · Indie Pop", c: "cream", image: "/images/friends-celebrating.jpg", alt: "Friends celebrating a birthday together", audioUrl: sampleSongAudio("heres-to-us.mp3") },
+  { tag: "For someone special", title: "I Carry You", meta: "Gentle & Emotional · Acoustic", c: "ink", image: "/images/generations-listening.jpg", alt: "Two people from different generations listening to music", audioUrl: sampleSongAudio("i-carry-you.mp3") },
 ];
 
 const FEATS = [
@@ -251,16 +255,19 @@ export default function HomePage() {
           <div className="sg-songs">
             {SONGS.map((s, i) => (
               <Reveal key={s.title} delay={i * 0.06}>
-                <Link href="/create" className={`sg-song sg-song-${s.c}`}>
-                  <div className="sg-song-art">
-                    <img src={s.image} alt={s.alt} />
-                    <span aria-hidden><Music2 size={18} /></span>
-                  </div>
-                  <span className="sg-song-tag">{s.tag}</span>
-                  <h3>{s.title}</h3>
-                  <p>{s.meta}</p>
-                  <span className="sg-song-go">Make one like this <ArrowRight size={14} aria-hidden /></span>
-                </Link>
+                <article className={`sg-song sg-song-${s.c}`}>
+                  <Link href="/create" className="sg-song-link">
+                    <div className="sg-song-art">
+                      <img src={s.image} alt={s.alt} />
+                      <span aria-hidden><Music2 size={18} /></span>
+                    </div>
+                    <span className="sg-song-tag">{s.tag}</span>
+                    <h3>{s.title}</h3>
+                    <p>{s.meta}</p>
+                  </Link>
+                  {s.audioUrl && <audio className="sg-sample-audio" controls preload="none" src={s.audioUrl} aria-label={`Play song sample: ${s.title}`}>Audio sample for {s.title}</audio>}
+                  <Link href="/create" className="sg-song-go">Make one like this <ArrowRight size={14} aria-hidden /></Link>
+                </article>
               </Reveal>
             ))}
           </div>
