@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, LoaderCircle, Music2 } from "lucide-react";
 import { useCreateAuthSession } from "@workspace/api-client-react";
 import { Nav } from "@/components/shared";
@@ -15,6 +16,7 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const exchange = useCreateAuthSession();
+  const queryClient = useQueryClient();
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -36,8 +38,12 @@ export default function AccountPage() {
         return;
       }
       await exchange.mutateAsync({ data: { accessToken: token } });
+      queryClient.clear();
       const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next === "create" ? "/create" : "/dashboard");
+      const destination = next === "create" ? "/create" : next;
+      const safeDestination = destination && /^\/(?:create|dashboard|studio\/[a-f0-9-]{36})(?:\?|$)/i.test(destination)
+        ? destination : "/dashboard";
+      router.push(safeDestination);
       router.refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "We couldn’t complete sign-in. Please try again.");

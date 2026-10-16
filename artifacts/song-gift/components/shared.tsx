@@ -8,7 +8,7 @@ export function Brand() {
 }
 
 export function Nav() {
-  return <header className="shell nav"><Brand/><nav className="nav-links"><Link className="hide-mobile" href="/#how-it-works">How it works</Link><Link className="hide-mobile" href="/dashboard">My songs</Link><Link href="/account" className="btn">Sign in <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="shell nav"><Brand/><nav className="nav-links"><Link className="hide-mobile" href="/#how">How it works</Link><Link className="hide-mobile" href="/dashboard">My songs</Link><Link href="/account" className="btn">Sign in <ArrowRight size={15}/></Link></nav></header>;
 }
 
 export function Footer() {

@@ -5,7 +5,9 @@ export function jsonError(message: string, status: number) {
 }
 
 export function configurationError(error: unknown) {
-  if (error instanceof Error && error.message.includes("configuration is missing")) {
+  if (error instanceof Error && (error.message.includes("configuration is missing") ||
+      error.message === "Supabase connection is unavailable." ||
+      error.message.startsWith("Stripe public and secret keys must"))) {
     return jsonError(error.message, 503);
   }
   return null;

@@ -21,6 +21,9 @@ export async function getRequestUser(request: NextRequest): Promise<User | null>
   if (!token) return null;
 
   const { data, error } = await getAdminSupabase().auth.getUser(token);
+  if (error && (error.status === 0 || !error.status || error.status >= 500)) {
+    throw new Error("Supabase connection is unavailable.");
+  }
   return error ? null : data.user;
 }
 

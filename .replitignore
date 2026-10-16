@@ -6,3 +6,6 @@
 
 # Development-only Next.js cache; production uses .next.
 **/.next-dev
+
+# Generated production output is rebuilt by the deployment platform.
+**/.next

@@ -1,11 +1,29 @@
 {
   "version": 1,
   "functions": {
+    "/api/generate-lyrics": {
+      "maxDuration": 120
+    },
+    "/api/share/[shareToken]": {
+      "maxDuration": 300
+    },
+    "/api/generate-song": {
+      "maxDuration": 120
+    },
+    "/api/create-checkout": {
+      "maxDuration": 120
+    },
     "/api/songs/[songId]/video-assets": {
       "maxDuration": 60
     },
+    "/api/checkout/complete": {
+      "maxDuration": 120
+    },
     "/api/songs/[songId]": {
-      "maxDuration": 60
+      "maxDuration": 300
+    },
+    "/api/webhooks/stripe": {
+      "maxDuration": 120
     }
   }
 }

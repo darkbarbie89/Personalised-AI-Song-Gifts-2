@@ -18,13 +18,16 @@ export async function PATCH(
     const supabase = getAdminSupabase();
     const { data: existing, error: lookupError } = await supabase
       .from("songs")
-      .select("id, order_id")
+      .select("id, order_id, status")
       .eq("id", songId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (lookupError) return jsonError("The song could not be loaded.", 500);
     if (!existing) return jsonError("Song not found.", 404);
     if (!existing.order_id) return jsonError("Complete checkout before approving lyrics.", 402);
+    if (["generating_lyrics", "generating_song", "completed"].includes(existing.status)) {
+      return jsonError("These lyrics are locked while the song is being made or is completed.", 409);
+    }
 
     const { data, error } = await supabase
       .from("songs")
@@ -35,9 +38,11 @@ export async function PATCH(
       })
       .eq("id", songId)
       .eq("user_id", user.id)
+      .eq("status", existing.status)
       .select("*")
-      .single();
+      .maybeSingle();
     if (error) return jsonError("Lyrics could not be saved.", 500);
+    if (!data) return jsonError("The song changed while saving. Refresh the studio before approving again.", 409);
     return NextResponse.json(serializeSong(data));
   } catch (error) {
     return configurationError(error) ?? jsonError("Lyrics could not be saved.", 500);

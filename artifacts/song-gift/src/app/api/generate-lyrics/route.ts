@@ -4,8 +4,10 @@ import { configurationError, jsonError } from "@/lib/server/http";
 import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 
 const CLAUDE_ENDPOINT = "https://api.anthropic.com/v1/messages";
+export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
+  const rollback: { run: (() => Promise<void>) | null } = { run: null };
   try {
     const user = await getRequestUser(request);
     if (!user) return jsonError("Sign in before generating lyrics.", 401);
@@ -22,6 +24,10 @@ export async function POST(request: NextRequest) {
     if (lookupError) return jsonError("The song could not be loaded.", 500);
     if (!song) return jsonError("Song not found.", 404);
     if (!song.order_id) return jsonError("Complete checkout before generating lyrics.", 402);
+    if (song.lyrics_approved || ["generating_song", "completed"].includes(song.status)) {
+      return jsonError("Approved lyrics cannot be regenerated for a song already being made.", 409);
+    }
+    if (song.status === "generating_lyrics") return jsonError("Your lyric draft is already being written. Please wait a moment.", 409);
     if (
       parsed.data.recipientName !== song.recipient_name ||
       parsed.data.relationship !== song.relationship ||
@@ -35,7 +41,17 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return jsonError("Anthropic server configuration is missing.", 503);
-    await supabase.from("songs").update({ status: "generating_lyrics" }).eq("id", song.id);
+    const { data: claimed, error: claimError } = await supabase.from("songs")
+      .update({ status: "generating_lyrics" }).eq("id", song.id).eq("status", song.status)
+      .eq("lyrics_approved", false).select("id").maybeSingle();
+    if (claimError) return jsonError("The lyric draft could not be started.", 500);
+    if (!claimed) return jsonError("This song is already being updated. Refresh the studio.", 409);
+    rollback.run = async () => {
+      const { error } = await supabase.from("songs")
+        .update({ status: song.lyrics ? "lyrics_ready" : "draft" })
+        .eq("id", song.id).eq("status", "generating_lyrics");
+      if (error) throw new Error("The lyric draft status could not be restored.");
+    };
 
     const response = await fetch(CLAUDE_ENDPOINT, {
       method: "POST",
@@ -65,11 +81,14 @@ export async function POST(request: NextRequest) {
     });
     const result = (await response.json().catch(() => ({}))) as {
       content?: Array<{ type?: string; text?: string }>;
+      stop_reason?: string;
     };
     const lyrics =
-      result.content?.find((block) => block.type === "text")?.text?.trim() ?? "";
-    if (!response.ok || !lyrics) {
-      await supabase.from("songs").update({ status: "draft" }).eq("id", song.id);
+      result.content?.filter((block) => block.type === "text").map(block => block.text ?? "").join("\n").trim() ?? "";
+    if (!response.ok || lyrics.length < 20 || lyrics.length > 5000 || result.stop_reason === "max_tokens") {
+      await rollback.run();
+      rollback.run = null;
+      if (response.status === 401) return jsonError("The lyric provider rejected its API key. Please update the server configuration.", 503);
       return jsonError("Lyrics could not be generated just now. Please try again.", 502);
     }
 
@@ -81,9 +100,17 @@ export async function POST(request: NextRequest) {
         status: "lyrics_ready",
       })
       .eq("id", song.id);
-    if (updateError) return jsonError("The lyrics were generated but could not be saved.", 500);
+    if (updateError) {
+      await rollback.run();
+      rollback.run = null;
+      return jsonError("The lyrics were generated but could not be saved.", 500);
+    }
+    rollback.run = null;
     return NextResponse.json({ lyrics });
   } catch (error) {
+    if (rollback.run) {
+      try { await rollback.run(); } catch { return jsonError("Lyrics could not be generated and their status needs recovery. Your story and previous lyrics are still saved.", 503); }
+    }
     return configurationError(error) ?? jsonError("Lyrics could not be generated.", 500);
   }
 }

@@ -7,7 +7,8 @@
     "dev": "next dev --hostname 0.0.0.0 --port $PORT",
     "build": "next build",
     "serve": "next start --hostname 0.0.0.0 --port $PORT",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts lib/lyric-video/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -27,6 +28,7 @@
     "@types/react": "19.2.0",
     "@types/react-dom": "19.2.0",
     "tailwindcss": "catalog:",
+    "tsx": "catalog:",
     "typescript": "~5.9.3"
   }
 }

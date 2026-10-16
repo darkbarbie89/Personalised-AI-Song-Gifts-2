@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jsonError, configurationError } from "@/lib/server/http";
 import { getAdminSupabase } from "@/lib/server/supabase";
+import { refreshSongFromApiframe } from "@/lib/server/apiframe";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function GET(
   request: NextRequest,
@@ -10,15 +13,15 @@ export async function GET(
 ) {
   try {
     const { shareToken } = await context.params;
-    const { data: song, error } = await getAdminSupabase()
+    if (!z.string().uuid().safeParse(shareToken).success) return jsonError("This gift link is unavailable.", 404);
+    const { data: stored, error } = await getAdminSupabase()
       .from("songs")
-      .select(
-        "recipient_name, sender_name, occasion, song_url, alternate_song_url, cover_art_url, status",
-      )
+      .select("*")
       .eq("share_token", shareToken)
       .maybeSingle();
     if (error) return jsonError("This gift could not be loaded.", 500);
-    if (!song) return jsonError("This gift link is unavailable.", 404);
+    if (!stored) return jsonError("This gift link is unavailable.", 404);
+    const song = await refreshSongFromApiframe(stored);
     if (!["generating_song", "completed"].includes(song.status)) {
       return jsonError("This gift is not ready to be shared yet.", 404);
     }

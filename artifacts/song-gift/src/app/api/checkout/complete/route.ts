@@ -6,6 +6,8 @@ import { completePaidSession, retrieveStripeSession } from "@/lib/server/stripe"
 import { ensureCoverArt } from "@/lib/server/songs";
 import { serializeSong } from "@/lib/server/songs";
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getRequestUser(request);

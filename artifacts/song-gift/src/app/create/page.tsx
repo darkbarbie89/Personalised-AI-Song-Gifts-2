@@ -23,20 +23,48 @@ export default function CreatePage() {
   const [brief, setBrief] = useState<CheckoutInput>(initial);
   const createCheckout = useCreateCheckout();
   const [error, setError] = useState("");
-  useEffect(() => { try { const saved = localStorage.getItem(DRAFT_KEY); const requested = new URLSearchParams(window.location.search).get("package"); const packageFromUrl = packages.find(p => p.id === requested)?.id; if (saved) setBrief({ ...initial, ...JSON.parse(saved), ...(packageFromUrl ? { package: packageFromUrl } : {}) }); else if (packageFromUrl) setBrief(prev => ({ ...prev, package: packageFromUrl })); } catch {} }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const packageFromUrl = packages.find(p => p.id === params.get("package"))?.id;
+    let restored = { ...initial };
+    try {
+      const saved = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? "{}");
+      for (const key of ["recipientName", "relationship", "occasion", "story", "mood", "genre"] as const) {
+        if (typeof saved?.[key] === "string") restored[key] = saved[key];
+      }
+      if (packages.some(p => p.id === saved?.package)) restored.package = saved.package;
+    } catch { /* Ignore malformed or unavailable browser storage, not the URL package. */ }
+    if (packageFromUrl) restored.package = packageFromUrl;
+    setBrief(restored);
+    if (params.get("checkout") === "cancelled") setError("Checkout was cancelled. No payment was completed; you can review your details and try again.");
+  }, []);
   function update<K extends keyof CheckoutInput>(key: K, value: CheckoutInput[K]) {
-    setBrief(prev => { const next = { ...prev, [key]: value }; localStorage.setItem(DRAFT_KEY, JSON.stringify(next)); return next; });
+    const next = { ...brief, [key]: value };
+    setBrief(next);
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(next)); }
+    catch { setError("Browser storage is unavailable. Keep this tab open so you don’t lose your story."); }
   }
   const canContinue = step === 0 ? brief.recipientName.trim().length > 0 && brief.relationship.trim().length > 0 && brief.story.trim().length >= 50 : step === 1 ? brief.occasion.trim().length > 0 : step === 2 ? !!brief.mood && !!brief.genre : true;
   async function submit() {
     setError("");
+    if (createCheckout.isPending) return;
+    if (!brief.recipientName.trim() || !brief.relationship.trim() || brief.story.trim().length < 50 || !brief.occasion || !brief.mood || !brief.genre) {
+      setStep(0);
+      setError("Please complete all of your song details before checkout.");
+      return;
+    }
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!brief.useCredit && !/^pk_(test|live)_/.test(publishableKey ?? "")) {
+      setError("Stripe checkout is not configured. Please try again once the public payment key is set.");
+      return;
+    }
     try {
       const result = await createCheckout.mutateAsync({ data: brief });
       if (result.checkoutUrl) window.location.assign(result.checkoutUrl);
-      else { localStorage.removeItem(DRAFT_KEY); router.push(`/studio/${result.songId}`); }
+      else { try { localStorage.removeItem(DRAFT_KEY); } catch {} router.push(`/studio/${result.songId}`); }
     } catch (e) {
       const message = e instanceof Error ? e.message : "We couldn’t save your story just yet.";
-      if (/unauthorized|sign in|authentication|session/i.test(message)) router.push("/account?next=create");
+       if ((e as { status?: number })?.status === 401 || /unauthorized|sign in|authentication|session/i.test(message)) router.push("/account?next=create");
       else setError(message || "We couldn’t save your story just yet. Please try again.");
     }
   }

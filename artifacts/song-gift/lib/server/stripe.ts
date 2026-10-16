@@ -10,6 +10,9 @@ export type PackageKey = keyof typeof packages;
 
 type StripeSession = {
   id: string;
+  currency?: string | null;
+  mode?: string;
+  client_reference_id?: string | null;
   payment_status?: string;
   amount_total?: number | null;
   customer_details?: { email?: string | null } | null;
@@ -19,6 +22,12 @@ type StripeSession = {
 function stripeSecret() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe server configuration is missing.");
+  const publicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!publicKey) throw new Error("Stripe public configuration is missing.");
+  const mode = key.startsWith("sk_test_") ? "test" : key.startsWith("sk_live_") ? "live" : null;
+  if (!mode || !publicKey.startsWith(`pk_${mode}_`)) {
+    throw new Error("Stripe public and secret keys must belong to the same test or live mode.");
+  }
   return key;
 }
 
@@ -30,6 +39,7 @@ async function stripeFetch(path: string, init?: RequestInit) {
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(25_000),
   });
 }
 
@@ -107,9 +117,13 @@ export async function completePaidSession(session: StripeSession) {
   const songId = metadata.song_id;
   const userId = metadata.user_id;
   const packageKey = metadata.package as PackageKey | undefined;
-  const pack = packageKey ? packages[packageKey] : null;
+  const pack = packageKey && Object.hasOwn(packages, packageKey) ? packages[packageKey] : null;
   if (!songId || !userId || !pack) {
     throw new Error("The paid checkout session is missing valid song metadata.");
+  }
+  if (session.mode !== "payment" || session.currency !== "usd" ||
+      session.amount_total !== pack.amount || session.client_reference_id !== songId) {
+    throw new Error("The payment amount, currency, or song reference does not match this package.");
   }
 
   const supabase = getAdminSupabase();
@@ -131,6 +145,9 @@ export async function completePaidSession(session: StripeSession) {
   if (lookupError) throw new Error("The payment record could not be checked.");
 
   let order = existing;
+  if (order && (order.user_id !== userId || order.status !== "active")) {
+    throw new Error("This payment is not active for this account.");
+  }
   if (!order) {
     const email =
       session.customer_details?.email ||

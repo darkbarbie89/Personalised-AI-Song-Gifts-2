@@ -5,6 +5,8 @@ import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 import { createStripeCheckoutSession, getRemainingCredits } from "@/lib/server/stripe";
 import { ensureCoverArt } from "@/lib/server/songs";
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getRequestUser(request);
@@ -15,6 +17,8 @@ export async function POST(request: NextRequest) {
     if (!user.email) return jsonError("Your account needs a verified email to purchase a song.", 400);
 
     const input = parsed.data;
+    // Fail before creating media or checkout sessions if the account's order data is unavailable.
+    const creditsBefore = await getRemainingCredits(user.id);
     const supabase = getAdminSupabase();
     let orderId: string | null = null;
 
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const creditsRemaining = await getRemainingCredits(user.id);
+    const creditsRemaining = Math.max(0, creditsBefore - (input.useCredit ? 1 : 0));
     return NextResponse.json({ songId: song.id, checkoutUrl, creditsRemaining });
   } catch (error) {
     return configurationError(error) ?? jsonError("Could not start your song gift.", 500);

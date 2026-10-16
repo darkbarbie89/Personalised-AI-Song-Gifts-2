@@ -4,6 +4,14 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Run & Operate
 
+### Song Gift
+
+- Song Gift is the Next.js app in `artifacts/song-gift`; its deployment target is **Vercel**.
+- Preserve its existing Supabase database/auth/storage and Stripe-hosted checkout. Do not replace them with a different database, authentication system, or payment integration.
+- Use the artifact's README and `.env.example` for Vercel setup. Public environment values require a rebuild after changes.
+- **Why:** the user explicitly specified Vercel and the existing Supabase/Stripe environment-variable setup for the end-to-end purchase flow.
+- **How to apply:** keep future fixes compatible with Vercel serverless handlers; use request-driven status polling rather than relying on an in-memory background process.
+
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages

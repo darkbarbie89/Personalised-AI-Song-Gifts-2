@@ -5,7 +5,7 @@ import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 import { serializeSong } from "@/lib/server/songs";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(
   request: NextRequest,

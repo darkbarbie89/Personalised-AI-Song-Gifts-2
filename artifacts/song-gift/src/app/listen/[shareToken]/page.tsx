@@ -2,13 +2,13 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useGetSharedSong } from "@workspace/api-client-react";
+import { getGetSharedSongQueryKey, useGetSharedSong } from "@workspace/api-client-react";
 import { ArrowRight, Music2 } from "lucide-react";
 import { ErrorState, Footer, LoadingState, Nav } from "@/components/shared";
 
 export default function ListenPage() {
   const { shareToken } = useParams<{ shareToken: string }>();
-  const { data, isLoading, isError, refetch } = useGetSharedSong(shareToken);
+  const { data, isLoading, isError, refetch } = useGetSharedSong(shareToken, { query: { queryKey: getGetSharedSongQueryKey(shareToken), refetchInterval: query => query.state.data?.status === "generating_song" ? 6000 : false } });
   if (isLoading) return <><Nav/><LoadingState label="Opening a song made just for you…"/></>;
   if (isError || !data) return <><Nav/><div className="shell" style={{ padding: "45px 0" }}><ErrorState retry={() => refetch()} message="This listening page isn’t available right now. Ask the person who shared it to send the link again."/></div></>;
   const ready = data.status === "completed" && !!data.songUrl;

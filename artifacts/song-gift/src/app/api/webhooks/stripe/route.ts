@@ -4,6 +4,8 @@ import { completePaidSession } from "@/lib/server/stripe";
 import { ensureCoverArt } from "@/lib/server/songs";
 import { configurationError, jsonError } from "@/lib/server/http";
 
+export const maxDuration = 120;
+
 function validStripeSignature(rawBody: string, header: string, secret: string) {
   const values = header.split(",").map((part) => part.split("=", 2));
   const timestamp = values.find(([key]) => key === "t")?.[1];

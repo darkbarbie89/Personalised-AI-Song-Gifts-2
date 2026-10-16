@@ -5,6 +5,8 @@ import { startApiframeGeneration } from "@/lib/server/apiframe";
 import { getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 import { serializeSong } from "@/lib/server/songs";
 
+export const maxDuration = 120;
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getRequestUser(request);
@@ -37,13 +39,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(serializeSong(song));
     }
 
-    const taskId = await startApiframeGeneration({
-      lyrics: song.lyrics,
-      recipientName: song.recipient_name,
-      occasion: song.occasion,
-      mood: song.mood,
-      genre: song.genre,
-    });
+    // Only one request may start a paid provider job for this song.
+    const { data: claimed, error: claimError } = await supabase.from("songs")
+      .update({ status: "generating_song", apiframe_task_id: null })
+      .eq("id", song.id).eq("user_id", user.id).eq("status", song.status)
+      .select("*").maybeSingle();
+    if (claimError) return jsonError("Song generation could not be reserved.", 500);
+    if (!claimed) return jsonError("The song is already being updated. Refresh the studio.", 409);
+    let taskId: string;
+    try {
+      taskId = await startApiframeGeneration({
+        lyrics: song.lyrics,
+        recipientName: song.recipient_name,
+        occasion: song.occasion,
+        mood: song.mood,
+        genre: song.genre,
+      });
+    } catch (error) {
+      await supabase.from("songs").update({ status: "failed" }).eq("id", song.id).eq("status", "generating_song").is("apiframe_task_id", null);
+      throw error;
+    }
     const { data: updated, error: updateError } = await supabase
       .from("songs")
       .update({
