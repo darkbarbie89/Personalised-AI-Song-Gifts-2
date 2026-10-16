@@ -40,7 +40,7 @@ export default function CreatePage() {
       else setError(message || "We couldn’t save your story just yet. Please try again.");
     }
   }
-  return <main><Nav/><div className="shell page-top"><p className="eyebrow">Your song begins here</p><h1 className="display">A few details. A lifetime of meaning.</h1><p>Tell us about your person, then choose the sound and package that feel right.</p></div>
+  return <main><Nav/><div className="shell page-top story-page-hero"><div><p className="eyebrow">Your song begins here</p><h1 className="display">A few details. A lifetime of meaning.</h1><p>Tell us about your person, then choose the sound and package that feel right.</p></div><img src="/images/writing-story.jpg" alt="A person writing a meaningful story in a notebook"/></div>
     <div className="shell wizard-layout"><aside className="wizard-rail">{steps.map((title, i) => <div key={title} className={`rail-item ${step === i ? "active" : ""}`}><span className="rail-dot">{i < step ? <Check size={13}/> : i + 1}</span>{title}</div>)}</aside>
     <section className="form-card">
       <p className="eyebrow">Step {step + 1} of 4</p>

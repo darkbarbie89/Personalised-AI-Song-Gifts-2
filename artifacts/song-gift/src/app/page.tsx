@@ -115,10 +115,10 @@ const STEPS = [
 ];
 
 const SONGS = [
-  { tag: "Birthday for Mum", title: "This One's For You, Mama", meta: "Warm & Heartfelt · Acoustic Pop", c: "tomato" },
-  { tag: "Wedding Anniversary", title: "Still You", meta: "Romantic & Tender · Soft Pop Ballad", c: "lime" },
-  { tag: "Best Friend", title: "Here's To Us", meta: "Fun & Upbeat · Indie Pop", c: "cream" },
-  { tag: "In Memory Of", title: "I Carry You", meta: "Gentle & Emotional · Acoustic", c: "ink" },
+  { tag: "Birthday for Mum", title: "This One's For You, Mama", meta: "Warm & Heartfelt · Acoustic Pop", c: "tomato", image: "/images/birthday-gift.jpg", alt: "A woman opening a birthday gift" },
+  { tag: "Wedding Anniversary", title: "Still You", meta: "Romantic & Tender · Soft Pop Ballad", c: "lime", image: "/images/couple-listening.jpg", alt: "A couple sharing earphones and listening together" },
+  { tag: "Best Friend", title: "Here's To Us", meta: "Fun & Upbeat · Indie Pop", c: "cream", image: "/images/friends-celebrating.jpg", alt: "Friends celebrating a birthday together" },
+  { tag: "For someone special", title: "I Carry You", meta: "Gentle & Emotional · Acoustic", c: "ink", image: "/images/generations-listening.jpg", alt: "Two people from different generations listening to music" },
 ];
 
 const FEATS = [
@@ -184,11 +184,12 @@ export default function HomePage() {
               <li><Check size={15} aria-hidden /> From $9.99</li>
             </ul>
           </div>
-          <div className="sg-hero-art" aria-hidden>
-            <div className="sg-disc">
-              <div className="sg-disc-ring" />
-              <div className="sg-disc-ring r2" />
-              <div className="sg-disc-label"><span>For</span><b>someone<br />you love</b></div>
+          <div className="sg-hero-art">
+            <div className="sg-hero-photo">
+              <img src="/images/couple-listening.jpg" alt="A couple smiling as they listen to music together" />
+            </div>
+            <div className="sg-hero-photo-small">
+              <img src="/images/birthday-gift.jpg" alt="A woman opening a carefully wrapped birthday gift" />
             </div>
             <div className="sg-float f1"><Music2 size={16} /> Verse 1 · written for you</div>
             <div className="sg-float f2">Chorus<br /><small>Their name, your memory</small></div>
@@ -251,8 +252,9 @@ export default function HomePage() {
             {SONGS.map((s, i) => (
               <Reveal key={s.title} delay={i * 0.06}>
                 <Link href="/create" className={`sg-song sg-song-${s.c}`}>
-                  <div className="sg-song-art" aria-hidden>
-                    {Array.from({ length: 5 }).map((_, k) => (<i key={k} style={{ height: `${30 + ((i * 17 + k * 23) % 55)}%` }} />))}
+                  <div className="sg-song-art">
+                    <img src={s.image} alt={s.alt} />
+                    <span aria-hidden><Music2 size={18} /></span>
                   </div>
                   <span className="sg-song-tag">{s.tag}</span>
                   <h3>{s.title}</h3>
