@@ -1,0 +1,1 @@
+- [Homepage direction](homepage-direction.md) — user wants a modern, vibrant homepage that feels like a real SaaS, not a project.
