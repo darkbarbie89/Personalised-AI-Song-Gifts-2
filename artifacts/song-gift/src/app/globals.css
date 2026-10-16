@@ -846,3 +846,13 @@ footer, .footer {
   .hp-footer-inner { grid-template-columns: 1fr; gap: 32px; }
   .hp-footer-links { gap: 32px; }
 }
+
+/* Keep existing global element rules from affecting the new homepage. */
+.home .hp-nav { display: block; max-width: none; margin: 0; padding: 0; }
+.home .hp-nav-logo { font-size: 22px; font-weight: 400; }
+.home .hp-btn { color: #fff; }
+.home .hp-btn-ghost { color: var(--hp-fg); }
+.home .hp-btn-ghost:hover { color: var(--hp-accent); }
+.home .hp-cta .hp-btn { color: var(--hp-navy); }
+.home .hp-testimonial footer { border: 0; padding: 0; text-align: left; }
+.home .hp-footer { text-align: left; color: var(--hp-fg); }

@@ -27,6 +27,7 @@ export default function StudioPage() {
   const finished = song.status === "completed";
   const approvedOrMaking = song.lyricsApproved || song.status === "generating_song" || finished;
   async function createLyrics(tryAgain = false) {
+    if (!song) return;
     setMessage("");
     try {
       const result = await generateLyrics.mutateAsync({ data: {
@@ -58,6 +59,7 @@ export default function StudioPage() {
     } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn’t start the song just yet. Please try again."); }
   }
   async function retrySong() {
+    if (!song) return;
     setMessage("");
     try {
       await generateSong.mutateAsync({ data: {
