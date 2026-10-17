@@ -104,7 +104,7 @@ export default function StudioPage() {
       queryClient.setQueryData(getGetSongQueryKey(songId), generating);
       void queryClient.invalidateQueries({ queryKey: getListMySongsQueryKey() });
       await refetch();
-    } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn’t start the song just yet. Please try again."); }
+    } catch (err) { setMessage(err instanceof Error ? err.message : "We couldn't start the song just yet. Please try again."); }
   }
   async function retrySong() {
     if (!song) return;
