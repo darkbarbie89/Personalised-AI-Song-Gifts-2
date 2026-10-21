@@ -39,7 +39,7 @@ export async function startApiframeGeneration(input: {
       prompt: input.lyrics,
       sunoParams: {
         custom_mode: true,
-        model_version: "V4_5PLUS",
+        model_version: "V5_5",
         title: `${input.recipientName} — ${input.occasion}`.slice(0, 80),
         style: `${input.genre}, ${input.mood}, heartfelt, personal song`.slice(0, 1000),
       },
