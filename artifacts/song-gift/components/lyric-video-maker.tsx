@@ -241,7 +241,7 @@ export default function LyricVideoMaker({ song }: { song: Song }) {
         <button className="btn ghost lv-btn-sm" onClick={() => { audioRef.current?.pause(); setOpen(false); }} disabled={exporting}><X size={14} /> Close</button>
       </div>
 
-      {supported === false && <div className="lv-note warn" role="alert">This browser can’t export videos. Please open Song Gift in the latest Chrome, Edge, or Safari on a computer to make a lyric video.</div>}
+      {supported === false && <div className="lv-note warn" role="alert">This browser can’t export videos. Please open SingaGift in the latest Chrome, Edge, or Safari on a computer to make a lyric video.</div>}
 
       {supported !== false && load.status === "loading" && <div><div className="lv-skel" /><p className="hint" style={{ marginTop: 10 }}>Loading your song and cover…</p></div>}
 

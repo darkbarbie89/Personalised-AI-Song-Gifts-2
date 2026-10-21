@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, Download, Link2, Music2, PenLine, Sparkles, Wand2 } from "lucide-react";
+import { Brand } from "@/components/shared";
 
 const OCCASIONS = ["Birthday", "Anniversary", "Wedding", "Friendship", "Thank you", "In memory"] as const;
 const GENRES = [
@@ -153,10 +154,7 @@ export default function HomePage() {
     <main className="sg-home">
       <header className="sg-nav">
         <div className="sg-wrap sg-nav-in">
-          <Link href="/" className="sg-logo" aria-label="Song Gift home">
-            <span className="sg-logo-mark" aria-hidden><Music2 size={16} /></span>
-            Song Gift
-          </Link>
+          <Brand ariaLabel="SingaGift home" />
           <div className="sg-nav-links" role="navigation" aria-label="Primary">
             <a href="#how">How it works</a>
             <a href="#studio">Try it</a>
@@ -351,7 +349,7 @@ export default function HomePage() {
       <footer className="sg-footer">
         <div className="sg-wrap sg-foot-in">
           <div>
-            <span className="sg-logo"><span className="sg-logo-mark" aria-hidden><Music2 size={16} /></span>Song Gift</span>
+            <Brand ariaLabel="SingaGift home" />
             <p>Original songs made from your stories.</p>
           </div>
           <div className="sg-foot-cols">
@@ -374,7 +372,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="sg-wrap sg-foot-bot">&copy; Song Gift. All rights reserved.</div>
+        <div className="sg-wrap sg-foot-bot">&copy; SingaGift. All rights reserved.</div>
       </footer>
     </main>
   );

@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { Music2, ArrowRight, Heart, RefreshCw } from "lucide-react";
 
-export function Brand() {
-  return <Link href="/" className="brand"><span className="brand-mark"><Music2 size={17}/></span><span>song gift</span></Link>;
+export function Brand({ ariaLabel }: { ariaLabel?: string }) {
+  return <Link href="/" className="brand" aria-label={ariaLabel ?? "SingaGift home"}>
+    <span className="brand-mark" aria-hidden="true"><Music2 size={16}/></span>
+    <span>SingaGift</span>
+  </Link>;
 }
 
 export function Nav() {
-  return <header className="shell nav"><Brand/><nav className="nav-links"><Link className="hide-mobile" href="/#how">How it works</Link><Link className="hide-mobile" href="/dashboard">My songs</Link><Link href="/account" className="btn">Sign in <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="shell nav"><Brand/><nav className="nav-links"><Link className="hide-mobile" href="/#how">How it works</Link><Link className="hide-mobile" href="/dashboard">My songs</Link><Link href="/account" className="btn">Account <ArrowRight size={15}/></Link></nav></header>;
 }
 
 export function Footer() {

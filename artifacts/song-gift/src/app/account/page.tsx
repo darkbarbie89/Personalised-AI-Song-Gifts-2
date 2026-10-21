@@ -4,9 +4,9 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, LoaderCircle, Music2 } from "lucide-react";
+import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { useCreateAuthSession } from "@workspace/api-client-react";
-import { Nav } from "@/components/shared";
+import { Brand, Nav } from "@/components/shared";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function AccountPage() {
   }
 
   return <main><Nav/><div className="auth-experience"><div className="auth-photo"><img src="/images/generations-listening.jpg" alt="Two people listening to music together"/><div><span>Made from a real story</span><strong>A song they can return to.</strong></div></div><div className="auth-wrap"><section className="form-card auth-card">
-    <div className="brand-mark"><Music2 size={17}/></div><p className="eyebrow" style={{ marginTop: 23 }}>Your songs, together</p><h1 className="display">{mode === "signin" ? "Welcome back." : "Let’s keep this close."}</h1><p className="hint">Sign in to find your song gifts, or make an account to begin a new one.</p>
+    <div className="account-brand"><Brand/></div><p className="eyebrow" style={{ marginTop: 23 }}>Your songs, together</p><h1 className="display">{mode === "signin" ? "Welcome back." : "Let’s keep this close."}</h1><p className="hint">Sign in to find your song gifts, or make an account to begin a new one.</p>
     <div className="auth-switch"><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setMessage(""); }}>Sign in</button><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setMessage(""); }}>Create account</button></div>
     <form onSubmit={submit}><div className="field"><label htmlFor="email">Email address</label><input className="input" id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"/></div><div className="field"><label htmlFor="password">Password</label><input className="input" id="password" type="password" minLength={6} autoComplete={mode === "signin" ? "current-password" : "new-password"} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters"/></div>
       {message && <div className="notice" role="alert">{message}</div>}
