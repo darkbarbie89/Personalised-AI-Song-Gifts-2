@@ -14,3 +14,9 @@ The public brand is **SingaGift**, hosted at `singagift.com`. Use this exact spe
 **Why:** The user specified the domain and asked to rename the site and make the typographic logo consistent across pages.
 
 **How to apply:** Reuse the shared SingaGift wordmark for customer-facing site chrome and metadata; keep technical identifiers and storage keys unchanged unless explicitly requested.
+
+On the public listening page, keep the cover art visually contained and align it with the audio player instead of letting the artwork dominate the page.
+
+**Why:** The user said the cover image looked too large and the listening-page alignment felt wrong.
+
+**How to apply:** Use a balanced cover-and-player layout on wide screens and a smaller, centered cover above the player on phones.
