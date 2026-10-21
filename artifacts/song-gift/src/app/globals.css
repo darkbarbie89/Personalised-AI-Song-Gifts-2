@@ -1154,13 +1154,16 @@ header.nav { background: var(--paper); border-bottom: 1px solid var(--line); }
   display: grid;
   place-items: center;
   width: min(100%, 220px);
+  min-width: 0;
+  max-width: 100%;
   aspect-ratio: 1;
   justify-self: center;
+  overflow: hidden;
   padding: 10px;
   border-radius: 14px;
   background: #fff;
 }
-.listen-qr-code canvas { display: block; width: 100%; height: 100%; }
+.listen-qr-code canvas { display: block; width: 100% !important; height: 100% !important; max-width: 100%; }
 .listen-qr-copy { min-width: 0; }
 .listen-qr-copy h3 { margin: 7px 0 10px; font-size: 25px; line-height: 1.1; }
 .listen-qr-copy > .hint { margin: 0 0 14px; }
