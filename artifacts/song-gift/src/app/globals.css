@@ -1135,3 +1135,54 @@ header.nav { background: var(--paper); border-bottom: 1px solid var(--line); }
   .listen-cta { flex-direction: column; align-items: stretch; text-align: center; }
   .listen-cta .btn { justify-content: center; }
 }
+.listen-share-tools { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.listen-share-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.listen-share-buttons .btn { min-height: 44px; }
+.listen-share-status { margin: 10px 0 0; }
+.listen-qr-panel {
+  display: grid;
+  grid-template-columns: minmax(150px, .75fr) minmax(0, 1.25fr);
+  align-items: center;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.listen-qr-code {
+  display: grid;
+  place-items: center;
+  width: min(100%, 220px);
+  aspect-ratio: 1;
+  justify-self: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fff;
+}
+.listen-qr-code canvas { display: block; width: 100%; height: 100%; }
+.listen-qr-copy { min-width: 0; }
+.listen-qr-copy h3 { margin: 7px 0 10px; font-size: 25px; line-height: 1.1; }
+.listen-qr-copy > .hint { margin: 0 0 14px; }
+.listen-url-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.listen-share-url { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.listen-share-url input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+.listen-download-qr { margin-top: 12px; }
+@media (max-width: 520px) {
+  .listen-share-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .listen-share-buttons .btn { justify-content: center; padding-inline: 10px; font-size: 13px; }
+  .listen-qr-panel { grid-template-columns: 1fr; gap: 14px; padding: 15px; }
+  .listen-qr-code { width: min(100%, 196px); }
+  .listen-share-url { grid-template-columns: 1fr; }
+  .listen-share-url .btn, .listen-download-qr { width: 100%; justify-content: center; }
+}
