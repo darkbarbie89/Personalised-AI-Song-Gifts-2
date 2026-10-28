@@ -61,6 +61,7 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [exportError, setExportError] = useState("");
+  const [saveNotice, setSaveNotice] = useState<{ message: string; warning?: boolean } | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [watch, setWatch] = useState(false);
   const [savingVideo, setSavingVideo] = useState(false);
@@ -97,11 +98,11 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
   }, []);
 
   useEffect(() => {
-    if (!exporting) return;
+    if (!exporting && !savingVideo) return;
     const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [exporting]);
+  }, [exporting, savingVideo]);
 
   useEffect(() => {
     setSavedToGift(!!song.lyricVideoUrl);
@@ -128,6 +129,7 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
     setResult(prev => { if (prev) URL.revokeObjectURL(prev.url); return null; });
     setWatch(false);
     setExportError("");
+    setSaveNotice(null);
   }, []);
 
   const persist = useCallback((next: VideoDraft) => {
@@ -208,7 +210,21 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
     try {
       const out = await exportLyricVideo({ canvas, info, draft, cover: assets.cover, buffer: assets.buffer, signal: controller.signal, onProgress: setProgress });
       if (controller.signal.aborted) return;
-      setResult({ blob: out.blob, extension: out.extension, url: URL.createObjectURL(out.blob) });
+      const generated: Result = { blob: out.blob, extension: out.extension, url: URL.createObjectURL(out.blob) };
+      setResult(generated);
+      if (generated.blob.size > MAX_SAVED_VIDEO_BYTES) {
+        setSaveNotice({
+          warning: true,
+          message: "Your video is ready, but it’s over 50 MB and can’t be saved to the gift page. Download it now to keep a copy.",
+        });
+      } else if (savedToGift && shareToken) {
+        setSaveNotice({
+          warning: true,
+          message: "A video is already saved on this gift page. Only the song owner can replace it. This new version is not saved; download it or ask the owner to update the gift.",
+        });
+      } else {
+        await saveVideoToGiftPage(generated);
+      }
     } catch (err) {
       if (!controller.signal.aborted && !(err instanceof DOMException && err.name === "AbortError")) {
         setExportError(err instanceof Error ? err.message : "The video couldn’t be finished. Please try again.");
@@ -231,17 +247,21 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
     a.remove();
   }
 
-  async function saveVideoToGiftPage() {
-    if (!result || savingVideo) return;
-    if (result.blob.size > MAX_SAVED_VIDEO_BYTES) {
-      setExportError("This video is too large to save to the gift page. Download it to your device instead; saved videos must be 50 MB or smaller.");
+  async function saveVideoToGiftPage(videoToSave: Result | null = result) {
+    if (!videoToSave || savingVideo) return;
+    if (videoToSave.blob.size > MAX_SAVED_VIDEO_BYTES) {
+      setSaveNotice({
+        warning: true,
+        message: "Your video is ready, but it’s over 50 MB and can’t be saved to the gift page. Download it now to keep a copy.",
+      });
       return;
     }
     setSavingVideo(true);
     setSaveProgress(0);
     setExportError("");
+    setSaveNotice(null);
     try {
-      const mimeType = result.extension === "mp4" ? "video/mp4" : "video/webm";
+      const mimeType = videoToSave.extension === "mp4" ? "video/mp4" : "video/webm";
       const response = await fetch(`/api/songs/${song.id}/lyric-video/upload`, {
         method: "POST",
         credentials: "same-origin",
@@ -249,7 +269,7 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
         body: JSON.stringify({
           ...(shareToken ? { shareToken } : {}),
           mimeType,
-          size: result.blob.size,
+          size: videoToSave.blob.size,
         }),
       });
       const target = await response.json().catch(() => ({})) as {
@@ -299,14 +319,16 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
         };
         xhr.onerror = () => reject(new Error("The upload was interrupted. Check your connection and try again."));
         xhr.onabort = () => reject(new Error("The upload was cancelled."));
-        xhr.send(result.blob);
+        xhr.send(videoToSave.blob);
       });
 
       setSaveProgress(1);
       setSavedToGift(true);
+      setSaveNotice({ message: "Saved to your gift page. It will be there when someone opens the gift link." });
       onVideoSaved?.();
     } catch (error) {
-      setExportError(error instanceof Error ? error.message : "The video could not be saved. Please try again.");
+      const reason = error instanceof Error ? error.message : "The upload was interrupted.";
+      setExportError(`Your video is ready, but it hasn’t been saved to the gift page. ${reason} You can try again or download it to keep a copy.`);
     } finally {
       setSavingVideo(false);
     }
@@ -418,13 +440,11 @@ export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
             <button className="btn" onClick={startExport} disabled={!!validation || !format}>{result ? "Make it again" : <><Film size={15} /> Make the video</>}</button>
             {result && <button className="btn secondary" onClick={download}><Download size={15} /> Download .{result.extension}</button>}
             {result && <button className="btn ghost" onClick={() => setWatch(w => !w)}>{watch ? "Hide video" : "Watch it"}</button>}
-            {result && <button className="btn" onClick={saveVideoToGiftPage} disabled={savedToGift && !!shareToken}>
-              <Film size={15}/>{savedToGift ? (shareToken ? "Saved on gift page" : "Save updated video") : "Save to gift page"}
-            </button>}
+            {result && exportError && result.blob.size <= MAX_SAVED_VIDEO_BYTES && !(savedToGift && shareToken) &&
+              <button className="btn" onClick={() => saveVideoToGiftPage(result)}><Film size={15} /> Try saving again</button>}
           </div>}
           {exportError && <div className="lv-note bad" role="alert">{exportError}</div>}
-          {savedToGift && <p className="lv-note">This video is saved with the song and will be here when you return.</p>}
-          {savedToGift && shareToken && <p className="hint" style={{ marginTop: 8 }}>The saved version can be replaced by the song owner from their studio.</p>}
+          {saveNotice && <div className={`lv-note${saveNotice.warning ? " warn" : ""}`} role={saveNotice.warning ? "alert" : "status"}>{saveNotice.message}</div>}
           {result && !exporting && <p className="hint" style={{ marginTop: 12 }}>Your video is ready ({(result.blob.size / 1048576).toFixed(1)} MB). Changing anything above will clear it.</p>}
           {result && watch && !exporting && <video className="lv-video" src={result.url} controls playsInline />}
         </div>

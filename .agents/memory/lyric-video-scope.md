@@ -19,7 +19,7 @@ Lyric videos are rendered in the browser, then can be saved to the app's private
 
 **Why:** The user asked that videos remain available on the gift page after the creator leaves, while keeping the existing song media and database setup intact.
 
-**How to apply:** Keep local download available as a fallback. The video bucket is provisioned on first save, accepts MP4/WebM up to 50 MB, and should remain private. Do not describe locally rendered output as saved until the upload succeeds.
+**How to apply:** Automatically upload finished videos up to 50 MB to the private bucket, and show an immediate notice for larger videos or failed uploads. Keep local download available. The bucket is provisioned on first save and accepts MP4/WebM up to 50 MB. Do not describe locally rendered output as saved until the upload succeeds.
 
 The lyric-video maker should be available from the completed public gift page as well as the owner's studio.
 
