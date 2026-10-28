@@ -25,7 +25,7 @@ The lyric-video maker should be available from the completed public gift page as
 
 **Why:** The user expected to create a lyric video while viewing the gift page and could not find the studio-only control.
 
-**How to apply:** Show a clear maker entry point only when the shared song is completed and has lyrics. Public media access must be authorized by that song's matching share token.
+**How to apply:** Show a clear maker entry point only when the shared song is completed, has lyrics, and has no saved lyric video. Public media access must be authorized by that song's matching share token.
 
 Do not assume that a MediaRecorder MP4 container contains H.264 video and AAC audio.
 

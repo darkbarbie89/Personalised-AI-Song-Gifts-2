@@ -144,7 +144,7 @@ export default function ListenPage() {
         Your browser does not support video playback.
       </video>
     </section>}
-    {ready && data.lyrics && <LyricVideoMaker
+    {ready && data.lyrics && !data.lyricVideoUrl && <LyricVideoMaker
       song={data}
       shareToken={shareToken}
       onVideoSaved={() => { void refetch(); }}
