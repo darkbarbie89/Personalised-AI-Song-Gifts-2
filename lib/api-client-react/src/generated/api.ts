@@ -741,8 +741,8 @@ export const getGetSongVideoAssetUrl = (songId: string,
 }
 
 /**
- * Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
- * @summary Load an owned completed song's audio or cover for browser video export
+ * Returns existing stored media only; never accepts an arbitrary URL. Requires the owner's session cookie or the song's valid public share token.
+ * @summary Load a completed song's audio or cover for browser video export
  */
 export const getSongVideoAsset = async (songId: string,
     params: GetSongVideoAssetParams, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
@@ -792,7 +792,7 @@ export type GetSongVideoAssetQueryError = ErrorType<void>
 
 
 /**
- * @summary Load an owned completed song's audio or cover for browser video export
+ * @summary Load a completed song's audio or cover for browser video export
  */
 
 export function useGetSongVideoAsset<TData = Awaited<ReturnType<typeof getSongVideoAsset>>, TError = ErrorType<void>>(

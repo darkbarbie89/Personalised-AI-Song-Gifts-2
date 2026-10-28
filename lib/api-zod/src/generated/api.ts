@@ -197,15 +197,16 @@ export const GetSongResponse = zod.object({
 
 
 /**
- * Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
- * @summary Load an owned completed song's audio or cover for browser video export
+ * Returns existing stored media only; never accepts an arbitrary URL. Requires the owner's session cookie or the song's valid public share token.
+ * @summary Load a completed song's audio or cover for browser video export
  */
 export const GetSongVideoAssetParams = zod.object({
   "songId": zod.coerce.string().uuid()
 })
 
 export const GetSongVideoAssetQueryParams = zod.object({
-  "asset": zod.enum(['audio', 'cover'])
+  "asset": zod.enum(['audio', 'cover']),
+  "shareToken": zod.coerce.string().uuid().optional().describe('Public gift token that grants access to this song\'s media.')
 })
 
 export const GetSongVideoAssetResponse = zod.unknown()
@@ -292,12 +293,14 @@ export const GetSharedSongParams = zod.object({
 })
 
 export const GetSharedSongResponse = zod.object({
+  "id": zod.string().uuid(),
   "recipientName": zod.string(),
   "senderName": zod.string(),
   "occasion": zod.string(),
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyrics": zod.string().nullable(),
   "title": zod.string(),
   "status": zod.enum(['generating_song', 'completed'])
 })

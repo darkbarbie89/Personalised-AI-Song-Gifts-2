@@ -8,6 +8,7 @@
 import type { SharedSongStatus } from './sharedSongStatus';
 
 export interface SharedSong {
+  id: string;
   recipientName: string;
   senderName: string;
   occasion: string;
@@ -17,6 +18,8 @@ export interface SharedSong {
   alternateSongUrl: string | null;
   /** @nullable */
   coverArtUrl: string | null;
+  /** @nullable */
+  lyrics: string | null;
   title: string;
   status: SharedSongStatus;
 }

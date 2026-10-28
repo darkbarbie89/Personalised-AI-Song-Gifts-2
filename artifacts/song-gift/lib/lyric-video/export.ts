@@ -25,8 +25,8 @@ export async function getVideoFormat(): Promise<VideoFormat | null> {
   return null;
 }
 
-async function fetchAsset(songId: string, asset: "audio" | "cover", signal: AbortSignal) {
-  const blob = await getSongVideoAsset(songId, { asset }, {
+async function fetchAsset(songId: string, asset: "audio" | "cover", signal: AbortSignal, shareToken?: string) {
+  const blob = await getSongVideoAsset(songId, shareToken ? { asset, shareToken } : { asset }, {
     credentials: "same-origin", signal, cache: "no-store", responseType: "blob",
   });
   if (!blob.size) throw new Error(`The song ${asset} file is empty.`);
@@ -40,10 +40,10 @@ export type VideoAssets = {
   dispose: () => void;
 };
 
-export async function loadVideoAssets(songId: string, hasCover: boolean, signal: AbortSignal): Promise<VideoAssets> {
+export async function loadVideoAssets(songId: string, hasCover: boolean, signal: AbortSignal, shareToken?: string): Promise<VideoAssets> {
   const [audio, image] = await Promise.all([
-    fetchAsset(songId, "audio", signal),
-    hasCover ? fetchAsset(songId, "cover", signal) : Promise.resolve(null),
+    fetchAsset(songId, "audio", signal, shareToken),
+    hasCover ? fetchAsset(songId, "cover", signal, shareToken) : Promise.resolve(null),
   ]);
   signal.throwIfAborted();
   const context = new AudioContext();

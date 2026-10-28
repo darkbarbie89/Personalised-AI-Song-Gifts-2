@@ -10,6 +10,9 @@ import "./lyric-video-maker.css";
 
 type Loaded = { status: "idle" | "loading" | "ready" | "error"; error: string };
 type Result = { blob: Blob; url: string; extension: string };
+type LyricVideoSong = Pick<Song, "id" | "lyrics" | "songUrl" | "recipientName" | "occasion"> & {
+  coverArtUrl?: string | null;
+};
 
 function fingerprint(text: string) {
   let h = 5381;
@@ -33,7 +36,7 @@ function readSaved(key: string, print: string, estimated: VideoDraft["cues"]): V
   } catch { return null; }
 }
 
-export default function LyricVideoMaker({ song }: { song: Song }) {
+export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideoSong; shareToken?: string }) {
   const lyrics = song.lyrics ?? "";
   const songUrl = song.songUrl ?? "";
   const print = useMemo(() => fingerprint(`${lyrics}\n${songUrl}`), [lyrics, songUrl]);
@@ -141,7 +144,7 @@ export default function LyricVideoMaker({ song }: { song: Song }) {
     loadAbort.current = controller;
     setLoad({ status: "loading", error: "" });
     try {
-      const assets = await loadVideoAssets(song.id, hasCover, controller.signal);
+      const assets = await loadVideoAssets(song.id, hasCover, controller.signal, shareToken);
       if (controller.signal.aborted) { assets.dispose(); return; }
       assetsRef.current?.dispose();
       assetsRef.current = assets;

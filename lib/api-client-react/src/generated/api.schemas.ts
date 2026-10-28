@@ -191,6 +191,7 @@ export const SharedSongStatus = {
 } as const;
 
 export interface SharedSong {
+  id: string;
   recipientName: string;
   senderName: string;
   occasion: string;
@@ -200,6 +201,8 @@ export interface SharedSong {
   alternateSongUrl: string | null;
   /** @nullable */
   coverArtUrl: string | null;
+  /** @nullable */
+  lyrics: string | null;
   title: string;
   status: SharedSongStatus;
 }
@@ -238,6 +241,10 @@ export interface WebhookPayload { [key: string]: unknown }
 
 export type GetSongVideoAssetParams = {
 asset: GetSongVideoAssetAsset;
+/**
+ * Public gift token that grants access to this song's media.
+ */
+shareToken?: string;
 };
 
 export type GetSongVideoAssetAsset = typeof GetSongVideoAssetAsset[keyof typeof GetSongVideoAssetAsset];

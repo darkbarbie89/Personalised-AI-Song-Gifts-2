@@ -9,4 +9,8 @@ import type { GetSongVideoAssetAsset } from './getSongVideoAssetAsset';
 
 export type GetSongVideoAssetParams = {
 asset: GetSongVideoAssetAsset;
+/**
+ * Public gift token that grants access to this song's media.
+ */
+shareToken?: string;
 };

@@ -7,6 +7,7 @@ import { getGetSharedSongQueryKey, useGetSharedSong } from "@workspace/api-clien
 import { QRCodeCanvas } from "qrcode.react";
 import { ArrowRight, Copy, Download, Music2, QrCode, Share2 } from "lucide-react";
 import { ErrorState, Footer, LoadingState, Nav } from "@/components/shared";
+import LyricVideoMaker from "@/components/lyric-video-maker";
 
 export default function ListenPage() {
   const { shareToken } = useParams<{ shareToken: string }>();
@@ -130,6 +131,7 @@ export default function ListenPage() {
         <p className="hint">The person who made this gift is putting the finishing touches on it. Come back soon to hear it.</p>
       </section>}
     </div>
+    {ready && data.lyrics && <LyricVideoMaker song={data} shareToken={shareToken}/>}
     <div className="listen-cta">
       <p className="hint">A personal story, shared between people who matter.</p>
       <Link href="/" className="btn secondary">Make a song for someone <ArrowRight size={15}/></Link>

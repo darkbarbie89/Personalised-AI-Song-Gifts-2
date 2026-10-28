@@ -9,25 +9,29 @@ export const maxDuration = 60;
 const querySchema = z.object({
   songId: z.string().uuid(),
   asset: z.enum(["audio", "cover"]),
+  shareToken: z.string().uuid().optional(),
 });
 
 export async function GET(request: NextRequest, context: { params: Promise<{ songId: string }> }) {
   try {
     const user = await getRequestUser(request);
-    if (!user) return jsonError("Sign in to create a lyric video.", 401);
     const params = await context.params;
     const parsed = querySchema.safeParse({
       songId: params.songId,
       asset: request.nextUrl.searchParams.get("asset"),
+      shareToken: request.nextUrl.searchParams.get("shareToken") ?? undefined,
     });
     if (!parsed.success) return jsonError("Choose a valid song and video asset.", 400);
-    const { songId, asset } = parsed.data;
-    const { data: song, error } = await getAdminSupabase()
+    const { songId, asset, shareToken } = parsed.data;
+    if (!user && !shareToken) return jsonError("Sign in to create a lyric video.", 401);
+    let songQuery = getAdminSupabase()
       .from("songs")
       .select("id,status,song_url,cover_art_url")
-      .eq("id", songId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .eq("id", songId);
+    songQuery = shareToken
+      ? songQuery.eq("share_token", shareToken)
+      : songQuery.eq("user_id", user!.id);
+    const { data: song, error } = await songQuery.maybeSingle();
     if (error) return jsonError("The song could not be loaded.", 500);
     if (!song) return jsonError("Song not found.", 404);
     if (song.status !== "completed") return jsonError("Wait for your song to finish before making its video.", 409);

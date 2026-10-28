@@ -149,8 +149,8 @@ paths:
     get:
       operationId: getSongVideoAsset
       tags: [songs]
-      summary: Load an owned completed song's audio or cover for browser video export
-      description: Returns existing stored media only; never accepts an arbitrary URL. Requires the song owner's session cookie.
+      summary: Load a completed song's audio or cover for browser video export
+      description: Returns existing stored media only; never accepts an arbitrary URL. Requires the owner's session cookie or the song's valid public share token.
       parameters:
         - name: songId
           in: path
@@ -164,6 +164,13 @@ paths:
           schema:
             type: string
             enum: [audio, cover]
+        - name: shareToken
+          in: query
+          required: false
+          description: Public gift token that grants access to this song's media.
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
           description: Media bytes with their original content type
@@ -175,7 +182,7 @@ paths:
         "400":
           description: Invalid asset or song identifier
         "401":
-          description: Sign-in required
+          description: Sign-in or a valid share token required
         "404":
           description: Owned song or requested media not found
         "409":
@@ -510,6 +517,9 @@ components:
     SharedSong:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         recipientName:
           type: string
         senderName:
@@ -525,18 +535,22 @@ components:
         coverArtUrl:
           type: ["string", "null"]
           format: uri
+        lyrics:
+          type: ["string", "null"]
         title:
           type: string
         status:
           type: string
           enum: [generating_song, completed]
       required:
+        - id
         - recipientName
         - senderName
         - occasion
         - songUrl
         - alternateSongUrl
         - coverArtUrl
+        - lyrics
         - title
         - status
     AdminOrder:

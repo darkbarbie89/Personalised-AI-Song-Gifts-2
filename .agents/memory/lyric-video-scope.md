@@ -21,6 +21,12 @@ The initial video feature exports locally in the browser rather than introducing
 
 **How to apply:** Explain browser-format limitations. Treat cloud persistence and recipient video playback as explicit new capabilities, not existing behavior.
 
+The lyric-video maker should be available from the completed public gift page as well as the owner's studio.
+
+**Why:** The user expected to create a lyric video while viewing the gift page and could not find the studio-only control.
+
+**How to apply:** Show a clear maker entry point only when the shared song is completed and has lyrics. Public media access must be authorized by that song's matching share token.
+
 Do not assume that a MediaRecorder MP4 container contains H.264 video and AAC audio.
 
 **Why:** Browser verification produced a valid MP4 using VP9/Opus when only the generic `video/mp4` MIME type was selected. That file played in the test browser but may not play in a recipient's phone gallery.
