@@ -18,6 +18,14 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Check whether the current secure app session is valid
+ */
+export const GetAuthSessionResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Exchange a Supabase access token for secure app cookies
  */
 

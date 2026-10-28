@@ -144,6 +144,83 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+export const getGetAuthSessionUrl = () => {
+
+
+
+
+  return `/api/auth/session`
+}
+
+/**
+ * @summary Check whether the current secure app session is valid
+ */
+export const getAuthSession = async ( options?: Parameters<typeof customFetch>[1]): Promise<SessionResult> => {
+
+  return customFetch<SessionResult>(getGetAuthSessionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthSessionQueryKey = () => {
+    return [
+    `/api/auth/session`
+    ] as const;
+    }
+
+
+export const getGetAuthSessionQueryOptions = <TData = Awaited<ReturnType<typeof getAuthSession>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAuthSessionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthSession>>> = ({ signal }) => getAuthSession({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAuthSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthSession>>>
+export type GetAuthSessionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether the current secure app session is valid
+ */
+
+export function useGetAuthSession<TData = Awaited<ReturnType<typeof getAuthSession>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAuthSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAuthSessionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getCreateAuthSessionUrl = () => {
 
 

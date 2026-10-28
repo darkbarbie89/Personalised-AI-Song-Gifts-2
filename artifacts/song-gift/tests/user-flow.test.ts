@@ -10,7 +10,7 @@ import { PATCH as approveLyrics } from "../src/app/api/songs/[songId]/lyrics/rou
 import { GET as getSong } from "../src/app/api/songs/[songId]/route";
 import { GET as listSongs } from "../src/app/api/songs/route";
 import { GET as sharedSong } from "../src/app/api/share/[shareToken]/route";
-import { POST as signIn } from "../src/app/api/auth/session/route";
+import { GET as checkAuthSession, POST as signIn } from "../src/app/api/auth/session/route";
 import { POST as stripeWebhook } from "../src/app/api/webhooks/stripe/route";
 
 // Real route handlers and Supabase client; only external HTTP services are substituted.
@@ -187,6 +187,15 @@ describe("existing user flow through real Next.js handlers", { concurrency: fals
   beforeEach(() => {
     songs = []; orders = []; sessions = new Map();
     musicCalls = 0; lyricCalls = 0; lyricFailure = false; musicFailure = false; storageFailure = false; jobReady = false;
+  });
+
+  it("recognizes a signed-in account and rejects an expired session", async () => {
+    const active = await checkAuthSession(request("/api/auth/session", undefined, "owner-token", "GET"));
+    assert.equal(active.status, 200);
+    assert.deepEqual(await active.json(), { ok: true });
+
+    const expired = await checkAuthSession(request("/api/auth/session", undefined, "expired-token", "GET"));
+    assert.equal(expired.status, 401);
   });
 
   it("completes checkout, editable lyrics, approval, generation, public listening, and the owner dashboard", async () => {

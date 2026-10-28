@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authSessionSchema } from "@/lib/server/schemas";
-import { AUTH_COOKIE, getAdminSupabase } from "@/lib/server/supabase";
+import { AUTH_COOKIE, getAdminSupabase, getRequestUser } from "@/lib/server/supabase";
 import { configurationError, jsonError } from "@/lib/server/http";
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getRequestUser(request);
+    if (!user) return jsonError("No active sign-in session.", 401);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return configurationError(error) ?? jsonError("Could not check the sign-in session.", 500);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {

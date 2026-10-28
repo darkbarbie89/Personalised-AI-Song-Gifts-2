@@ -31,6 +31,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
   /auth/session:
+    get:
+      operationId: getAuthSession
+      tags: [songs]
+      summary: Check whether the current secure app session is valid
+      responses:
+        "200":
+          description: Active session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResult"
+        "401":
+          description: No active session
     post:
       operationId: createAuthSession
       tags: [songs]
