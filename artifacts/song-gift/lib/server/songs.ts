@@ -18,6 +18,7 @@ export function serializeSong(row: SongRow): Song {
     alternateSongUrl:
       typeof row.alternate_song_url === "string" ? row.alternate_song_url : null,
     coverArtUrl: typeof row.cover_art_url === "string" ? row.cover_art_url : null,
+    lyricVideoUrl: null,
     shareToken: String(row.share_token),
     status: String(row.status) as Song["status"],
     createdAt: String(row.created_at),

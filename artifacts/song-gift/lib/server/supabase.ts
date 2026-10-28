@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 export const AUTH_COOKIE = "songgift_access";
 const STORAGE_BUCKET = "song-assets";
+export const LYRIC_VIDEO_BUCKET = "singagift-lyric-videos";
 
 export function getAdminSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

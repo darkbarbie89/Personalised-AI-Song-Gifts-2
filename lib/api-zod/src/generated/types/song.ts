@@ -24,6 +24,8 @@ export interface Song {
   alternateSongUrl: string | null;
   /** @nullable */
   coverArtUrl: string | null;
+  /** @nullable */
+  lyricVideoUrl: string | null;
   shareToken: string;
   status: SongStatus;
   createdAt: Date;

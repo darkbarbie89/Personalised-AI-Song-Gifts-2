@@ -12,7 +12,10 @@ type Loaded = { status: "idle" | "loading" | "ready" | "error"; error: string };
 type Result = { blob: Blob; url: string; extension: string };
 type LyricVideoSong = Pick<Song, "id" | "lyrics" | "songUrl" | "recipientName" | "occasion"> & {
   coverArtUrl?: string | null;
+  lyricVideoUrl?: string | null;
 };
+
+const MAX_SAVED_VIDEO_BYTES = 50 * 1024 * 1024;
 
 function fingerprint(text: string) {
   let h = 5381;
@@ -36,7 +39,11 @@ function readSaved(key: string, print: string, estimated: VideoDraft["cues"]): V
   } catch { return null; }
 }
 
-export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideoSong; shareToken?: string }) {
+export default function LyricVideoMaker({ song, shareToken, onVideoSaved }: {
+  song: LyricVideoSong;
+  shareToken?: string;
+  onVideoSaved?: () => void;
+}) {
   const lyrics = song.lyrics ?? "";
   const songUrl = song.songUrl ?? "";
   const print = useMemo(() => fingerprint(`${lyrics}\n${songUrl}`), [lyrics, songUrl]);
@@ -56,6 +63,9 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
   const [exportError, setExportError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [watch, setWatch] = useState(false);
+  const [savingVideo, setSavingVideo] = useState(false);
+  const [savedToGift, setSavedToGift] = useState(!!song.lyricVideoUrl);
+  const [saveProgress, setSaveProgress] = useState(0);
   const [saved, setSaved] = useState<"none" | "saved" | "unavailable">("none");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -92,6 +102,10 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [exporting]);
+
+  useEffect(() => {
+    setSavedToGift(!!song.lyricVideoUrl);
+  }, [song.lyricVideoUrl]);
 
   // Preview draw (never while the exporter owns the canvas).
   const ready = load.status === "ready";
@@ -217,6 +231,87 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
     a.remove();
   }
 
+  async function saveVideoToGiftPage() {
+    if (!result || savingVideo) return;
+    if (result.blob.size > MAX_SAVED_VIDEO_BYTES) {
+      setExportError("This video is too large to save to the gift page. Download it to your device instead; saved videos must be 50 MB or smaller.");
+      return;
+    }
+    setSavingVideo(true);
+    setSaveProgress(0);
+    setExportError("");
+    try {
+      const mimeType = result.extension === "mp4" ? "video/mp4" : "video/webm";
+      const response = await fetch(`/api/songs/${song.id}/lyric-video/upload`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(shareToken ? { shareToken } : {}),
+          mimeType,
+          size: result.blob.size,
+        }),
+      });
+      const target = await response.json().catch(() => ({})) as {
+        uploadUrl?: string;
+        uploadToken?: string;
+        mimeType?: string;
+        upsert?: boolean;
+        error?: string;
+      };
+      if (!response.ok || !target.uploadUrl || !target.uploadToken) {
+        throw new Error(target.error ?? "We couldn’t prepare a secure upload. Please try again.");
+      }
+
+      const uploadUrl = new URL(target.uploadUrl);
+      const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "", window.location.origin);
+      const allowedOrigins = new Set([supabaseUrl.origin]);
+      if (/supabase\.(co|in|red)$/.test(supabaseUrl.hostname) && !supabaseUrl.hostname.includes("storage.supabase.")) {
+        const storageUrl = new URL(supabaseUrl.toString());
+        storageUrl.hostname = storageUrl.hostname.replace("supabase.", "storage.supabase.");
+        allowedOrigins.add(storageUrl.origin);
+      }
+      if (uploadUrl.protocol !== "https:" || !allowedOrigins.has(uploadUrl.origin)) {
+        throw new Error("The secure upload destination could not be verified.");
+      }
+      uploadUrl.searchParams.set("token", target.uploadToken);
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl.toString());
+        xhr.setRequestHeader("Content-Type", mimeType);
+        xhr.setRequestHeader("Cache-Control", "max-age=3600");
+        if (target.upsert) xhr.setRequestHeader("x-upsert", "true");
+        xhr.upload.onprogress = event => {
+          if (event.lengthComputable) setSaveProgress(event.loaded / event.total);
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else {
+            let message = "The video could not be uploaded. Please try again.";
+            try {
+              const body = JSON.parse(xhr.responseText);
+              if (typeof body.message === "string") message = body.message;
+              else if (typeof body.error === "string") message = body.error;
+            } catch { /* keep the clear fallback */ }
+            reject(new Error(message));
+          }
+        };
+        xhr.onerror = () => reject(new Error("The upload was interrupted. Check your connection and try again."));
+        xhr.onabort = () => reject(new Error("The upload was cancelled."));
+        xhr.send(result.blob);
+      });
+
+      setSaveProgress(1);
+      setSavedToGift(true);
+      onVideoSaved?.();
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "The video could not be saved. Please try again.");
+    } finally {
+      setSavingVideo(false);
+    }
+  }
+
   const formatLabel = format ? (format.extension === "mp4" ? "MP4" : "WebM") : "";
   const active = activeCueIndex(draft.cues, time);
 
@@ -234,14 +329,14 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
   }
 
   return <section className="shell lv-root" aria-label="Lyric video maker">
-    <div className="lv-panel">
+      <div className="lv-panel">
       <div className="lv-head">
         <div>
           <p className="eyebrow">Lyric video</p>
           <h2>Wrap the song in its words.</h2>
           <p className="lv-lede">Your approved lyrics appear exactly as written. Preview it, adjust when each line appears, then save the video.</p>
         </div>
-        <button className="btn ghost lv-btn-sm" onClick={() => { audioRef.current?.pause(); setOpen(false); }} disabled={exporting}><X size={14} /> Close</button>
+          <button className="btn ghost lv-btn-sm" onClick={() => { audioRef.current?.pause(); setOpen(false); }} disabled={exporting || savingVideo}><X size={14} /> Close</button>
       </div>
 
       {supported === false && <div className="lv-note warn" role="alert">This browser can’t export videos. Please open SingaGift in the latest Chrome, Edge, or Safari on a computer to make a lyric video.</div>}
@@ -271,12 +366,12 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
               <label>Look</label>
               <div className="lv-themes">
                 {([["cream", "Cream"], ["midnight", "Midnight"]] as [VideoTheme, string][]).map(([t, label]) =>
-                  <button key={t} type="button" className={`lv-theme ${t}`} aria-pressed={draft.theme === t} disabled={exporting} onClick={() => update({ ...draft, theme: t })}><i />{label}</button>)}
+                <button key={t} type="button" className={`lv-theme ${t}`} aria-pressed={draft.theme === t} disabled={exporting || savingVideo} onClick={() => update({ ...draft, theme: t })}><i />{label}</button>)}
               </div>
             </div>
             <div className="field">
               <label htmlFor="lv-dedication">Dedication (optional)</label>
-              <input id="lv-dedication" className="input" maxLength={80} value={draft.dedication} disabled={exporting} placeholder="For Mum, with all my love" onChange={e => update({ ...draft, dedication: e.target.value.slice(0, 80) })} />
+              <input id="lv-dedication" className="input" maxLength={80} value={draft.dedication} disabled={exporting || savingVideo} placeholder="For Mum, with all my love" onChange={e => update({ ...draft, dedication: e.target.value.slice(0, 80) })} />
               <small>{draft.dedication.length}/80 · shown before the first line and under the cover</small>
             </div>
             <p className="lv-saved" style={{ marginTop: 14 }}>
@@ -293,16 +388,16 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
               <p className="eyebrow">Timing</p>
               <p className="lv-lede">The starting times are an estimate spread across the song. They are <strong>not</strong> automatically synced to the singing, so listen through and nudge any line that feels early or late.</p>
             </div>
-            <button className="btn ghost lv-btn-sm" onClick={resetEstimates} disabled={exporting}><RotateCcw size={14} /> Reset estimates</button>
+            <button className="btn ghost lv-btn-sm" onClick={resetEstimates} disabled={exporting || savingVideo}><RotateCcw size={14} /> Reset estimates</button>
           </div>
           <div className="lv-lines">
             {draft.cues.map((cue, i) => <div key={i} className={`lv-line${i === active ? " active" : ""}`}>
               <b>{i + 1}</b>
               <span>{cue.text}</span>
-              <input className="input" type="number" min={0} step={0.01} aria-label={`Line ${i + 1} start in seconds`} value={Number.isFinite(cue.start) ? cue.start : ""} disabled={exporting} onChange={e => setCue(i, e.target.value === "" ? NaN : Number(e.target.value))} />
+              <input className="input" type="number" min={0} step={0.01} aria-label={`Line ${i + 1} start in seconds`} value={Number.isFinite(cue.start) ? cue.start : ""} disabled={exporting || savingVideo} onChange={e => setCue(i, e.target.value === "" ? NaN : Number(e.target.value))} />
               <div className="lv-line-actions">
-                <button className="btn ghost" disabled={exporting || !Number.isFinite(cue.start)} onClick={() => seek(cue.start, true)}>Listen</button>
-                <button className="btn ghost" disabled={exporting} onClick={() => setCue(i, Math.round(time * 100) / 100)}>Set to now</button>
+                <button className="btn ghost" disabled={exporting || savingVideo || !Number.isFinite(cue.start)} onClick={() => seek(cue.start, true)}>Listen</button>
+                <button className="btn ghost" disabled={exporting || savingVideo} onClick={() => setCue(i, Math.round(time * 100) / 100)}>Set to now</button>
               </div>
             </div>)}
           </div>
@@ -313,15 +408,23 @@ export default function LyricVideoMaker({ song, shareToken }: { song: LyricVideo
           <p className="eyebrow">Save the video</p>
           <p className="lv-lede">Your video includes the full {formatVideoTime(duration)} song. Keep this tab open while it renders; export speed depends on your device. {formatLabel ? `This browser will make a ${formatLabel} file.` : ""}{format?.extension === "webm" ? " WebM plays in most browsers and apps but not every phone gallery." : ""}</p>
 
-          {exporting ? <>
+          {savingVideo ? <>
+            <div className="lv-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(saveProgress * 100)}><div style={{ transform: `scaleX(${saveProgress})` }} /></div>
+            <div className="lv-row"><span className="lv-time">Saving to your gift page · {Math.round(saveProgress * 100)}%</span></div>
+          </> : exporting ? <>
             <div className="lv-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}><div style={{ transform: `scaleX(${progress})` }} /></div>
             <div className="lv-row"><span className="lv-time">Rendering {Math.round(progress * 100)}%</span><button className="btn secondary lv-btn-sm" onClick={() => exportAbort.current?.abort()}><X size={14} /> Cancel</button></div>
           </> : <div className="lv-row">
             <button className="btn" onClick={startExport} disabled={!!validation || !format}>{result ? "Make it again" : <><Film size={15} /> Make the video</>}</button>
             {result && <button className="btn secondary" onClick={download}><Download size={15} /> Download .{result.extension}</button>}
             {result && <button className="btn ghost" onClick={() => setWatch(w => !w)}>{watch ? "Hide video" : "Watch it"}</button>}
+            {result && <button className="btn" onClick={saveVideoToGiftPage} disabled={savedToGift && !!shareToken}>
+              <Film size={15}/>{savedToGift ? (shareToken ? "Saved on gift page" : "Save updated video") : "Save to gift page"}
+            </button>}
           </div>}
           {exportError && <div className="lv-note bad" role="alert">{exportError}</div>}
+          {savedToGift && <p className="lv-note">This video is saved with the song and will be here when you return.</p>}
+          {savedToGift && shareToken && <p className="hint" style={{ marginTop: 8 }}>The saved version can be replaced by the song owner from their studio.</p>}
           {result && !exporting && <p className="hint" style={{ marginTop: 12 }}>Your video is ready ({(result.blob.size / 1048576).toFixed(1)} MB). Changing anything above will clear it.</p>}
           {result && watch && !exporting && <video className="lv-video" src={result.url} controls playsInline />}
         </div>

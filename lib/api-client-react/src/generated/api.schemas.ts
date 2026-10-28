@@ -141,6 +141,41 @@ export interface SongLyricsInput {
   lyrics: string;
 }
 
+export type LyricVideoUploadInputMimeType = typeof LyricVideoUploadInputMimeType[keyof typeof LyricVideoUploadInputMimeType];
+
+
+export const LyricVideoUploadInputMimeType = {
+  'video/mp4': 'video/mp4',
+  'video/webm': 'video/webm',
+} as const;
+
+export interface LyricVideoUploadInput {
+  shareToken?: string;
+  mimeType: LyricVideoUploadInputMimeType;
+  /**
+     * @minimum 1
+     * @maximum 52428800
+     */
+  size: number;
+}
+
+export type LyricVideoUploadTargetMimeType = typeof LyricVideoUploadTargetMimeType[keyof typeof LyricVideoUploadTargetMimeType];
+
+
+export const LyricVideoUploadTargetMimeType = {
+  'video/mp4': 'video/mp4',
+  'video/webm': 'video/webm',
+} as const;
+
+export interface LyricVideoUploadTarget {
+  uploadUrl: string;
+  uploadToken: string;
+  mimeType: LyricVideoUploadTargetMimeType;
+  upsert: boolean;
+  /** @maximum 52428800 */
+  maxBytes: number;
+}
+
 export type SongStatus = typeof SongStatus[keyof typeof SongStatus];
 
 
@@ -170,6 +205,8 @@ export interface Song {
   alternateSongUrl: string | null;
   /** @nullable */
   coverArtUrl: string | null;
+  /** @nullable */
+  lyricVideoUrl: string | null;
   shareToken: string;
   status: SongStatus;
   createdAt: string;
@@ -201,6 +238,8 @@ export interface SharedSong {
   alternateSongUrl: string | null;
   /** @nullable */
   coverArtUrl: string | null;
+  /** @nullable */
+  lyricVideoUrl: string | null;
   /** @nullable */
   lyrics: string | null;
   title: string;
@@ -253,5 +292,17 @@ export type GetSongVideoAssetAsset = typeof GetSongVideoAssetAsset[keyof typeof 
 export const GetSongVideoAssetAsset = {
   audio: 'audio',
   cover: 'cover',
+} as const;
+
+export type GetLyricVideoParams = {
+shareToken?: string;
+download?: GetLyricVideoDownload;
+};
+
+export type GetLyricVideoDownload = typeof GetLyricVideoDownload[keyof typeof GetLyricVideoDownload];
+
+
+export const GetLyricVideoDownload = {
+  NUMBER_1: '1',
 } as const;
 

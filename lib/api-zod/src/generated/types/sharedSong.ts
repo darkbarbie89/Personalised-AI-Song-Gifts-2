@@ -19,6 +19,8 @@ export interface SharedSong {
   /** @nullable */
   coverArtUrl: string | null;
   /** @nullable */
+  lyricVideoUrl: string | null;
+  /** @nullable */
   lyrics: string | null;
   title: string;
   status: SharedSongStatus;

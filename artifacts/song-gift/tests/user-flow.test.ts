@@ -10,6 +10,8 @@ import { PATCH as approveLyrics } from "../src/app/api/songs/[songId]/lyrics/rou
 import { GET as getSong } from "../src/app/api/songs/[songId]/route";
 import { GET as listSongs } from "../src/app/api/songs/route";
 import { GET as sharedSong } from "../src/app/api/share/[shareToken]/route";
+import { POST as createLyricVideoUpload } from "../src/app/api/songs/[songId]/lyric-video/upload/route";
+import { GET as getLyricVideo } from "../src/app/api/songs/[songId]/lyric-video/route";
 import { GET as checkAuthSession, POST as signIn } from "../src/app/api/auth/session/route";
 import { POST as stripeWebhook } from "../src/app/api/webhooks/stripe/route";
 
@@ -42,6 +44,8 @@ let lyricCalls: number;
 let lyricFailure: boolean;
 let musicFailure: boolean;
 let storageFailure: boolean;
+let lyricVideoBucketExists: boolean;
+let savedLyricVideoMime: string | null;
 let jobReady: boolean;
 const originalFetch = globalThis.fetch;
 const previousEnvironment = Object.fromEntries(Object.keys(environment).map(key => [key, process.env[key]]));
@@ -77,6 +81,43 @@ async function intercept(input: RequestInfo | URL, init?: RequestInit): Promise<
       const token = headers.get("authorization");
       if (!token?.includes("owner-token") && !token?.includes("other-token")) return json({ message: "Invalid session" }, 401);
       return json({ id: token.includes("other-token") ? other : owner, email: "fixture@example.com", user_metadata: {}, aud: "authenticated", created_at: "2026-01-01" });
+    }
+    if (url.pathname === "/storage/v1/bucket/singagift-lyric-videos") {
+      if (method === "GET") return lyricVideoBucketExists
+        ? json({ id: "singagift-lyric-videos", name: "singagift-lyric-videos", public: false })
+        : json({ message: "Bucket not found", statusCode: "404" }, 404);
+    }
+    if (url.pathname === "/storage/v1/bucket" && method === "POST") {
+      const bucket = JSON.parse(body);
+      assert.equal(bucket.public, false);
+      assert.equal(bucket.file_size_limit, 50 * 1024 * 1024);
+      assert.deepEqual(bucket.allowed_mime_types, ["video/mp4", "video/webm"]);
+      lyricVideoBucketExists = true;
+      return json({ name: "singagift-lyric-videos" });
+    }
+    if (url.pathname === "/storage/v1/object/list/singagift-lyric-videos") {
+      const prefix = JSON.parse(body).prefix;
+      return json(savedLyricVideoMime && prefix.startsWith("songs/")
+        ? [{ name: "lyric-video", metadata: { mimetype: savedLyricVideoMime } }]
+        : []);
+    }
+    if (url.pathname === "/storage/v1/object/upload/sign/singagift-lyric-videos/songs/") {
+      return json({ message: "Invalid path" }, 400);
+    }
+    if (url.pathname.startsWith("/storage/v1/object/upload/sign/singagift-lyric-videos/")) {
+      if (storageFailure) return json({ message: "Fixture storage failure" }, 500);
+      if (method === "POST") return json({
+        url: `${url.pathname.replace("/storage/v1", "")}?token=fixture-upload-token`,
+        Key: url.pathname.split("/upload/sign/")[1],
+      });
+      if (method === "PUT") {
+        savedLyricVideoMime = headers.get("content-type");
+        return json({ Key: url.pathname.split("/upload/sign/")[1], Id: randomUUID() });
+      }
+    }
+    if (url.pathname.startsWith("/storage/v1/object/sign/singagift-lyric-videos/")) {
+      if (storageFailure) return json({ message: "Fixture storage failure" }, 500);
+      return json({ signedURL: `/object/sign/singagift-lyric-videos/songs/fixture?token=fixture-download-token` });
     }
     if (url.pathname.startsWith("/storage/v1/object/")) {
       return storageFailure ? json({ message: "Fixture storage failure" }, 500) : json({ Key: url.pathname.split("/object/")[1], Id: randomUUID() });
@@ -186,7 +227,8 @@ describe("existing user flow through real Next.js handlers", { concurrency: fals
   });
   beforeEach(() => {
     songs = []; orders = []; sessions = new Map();
-    musicCalls = 0; lyricCalls = 0; lyricFailure = false; musicFailure = false; storageFailure = false; jobReady = false;
+    musicCalls = 0; lyricCalls = 0; lyricFailure = false; musicFailure = false; storageFailure = false;
+    lyricVideoBucketExists = false; savedLyricVideoMime = null; jobReady = false;
   });
 
   it("recognizes a signed-in account and rejects an expired session", async () => {
@@ -196,6 +238,86 @@ describe("existing user flow through real Next.js handlers", { concurrency: fals
 
     const expired = await checkAuthSession(request("/api/auth/session", undefined, "expired-token", "GET"));
     assert.equal(expired.status, 401);
+  });
+
+  it("saves a lyric video privately and exposes it only through the matching gift token", async () => {
+    const { song } = await paidSong();
+    Object.assign(song, { status: "completed", lyrics, song_url: "https://songgift-flow-test.supabase.co/storage/v1/object/public/song-assets/songs/fixture/take-1.mp3" });
+
+    const anonymous = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { mimeType: "video/webm", size: 1024 }, "", "POST"),
+      context(song.id),
+    );
+    assert.equal(anonymous.status, 401);
+
+    const prepared = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { shareToken: randomUUID(), mimeType: "video/webm", size: 1024 }, "", "POST"),
+      context(song.id),
+    );
+    assert.equal(prepared.status, 404);
+
+    const uploadResponse = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { shareToken: song.share_token, mimeType: "video/webm", size: 1024 }, "", "POST"),
+      context(song.id),
+    );
+    assert.equal(uploadResponse.status, 200, await uploadResponse.clone().text());
+    const target = await uploadResponse.json();
+    assert.equal(target.mimeType, "video/webm");
+    assert.equal(target.upsert, false);
+    const upload = await globalThis.fetch(target.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": target.mimeType },
+      body: new Blob(["fixture video"]),
+    });
+    assert.equal(upload.status, 200);
+
+    const shared = await sharedSong(request(`/api/share/${song.share_token}`, undefined, "", "GET"), {
+      params: Promise.resolve({ shareToken: song.share_token }),
+    });
+    const publicData = await shared.json();
+    assert.equal(shared.status, 200);
+    assert.equal(publicData.lyricVideoUrl, `https://songgift.test/api/songs/${song.id}/lyric-video?shareToken=${song.share_token}`);
+
+    const ownerSong = await getSong(request(`/api/songs/${song.id}`, undefined, "owner-token", "GET"), context(song.id));
+    assert.equal(ownerSong.status, 200);
+    assert.equal((await ownerSong.json()).lyricVideoUrl, `https://songgift.test/api/songs/${song.id}/lyric-video`);
+
+    const privateVideo = await getLyricVideo(
+      request(`/api/songs/${song.id}/lyric-video?shareToken=${song.share_token}`, undefined, "", "GET"),
+      context(song.id),
+    );
+    assert.equal(privateVideo.status, 307);
+    assert.match(privateVideo.headers.get("location") ?? "", /fixture-download-token/);
+
+    const wrongToken = await getLyricVideo(
+      request(`/api/songs/${song.id}/lyric-video?shareToken=${randomUUID()}`, undefined, "", "GET"),
+      context(song.id),
+    );
+    assert.equal(wrongToken.status, 404);
+    const noAccessToken = await getLyricVideo(
+      request(`/api/songs/${song.id}/lyric-video`, undefined, "", "GET"),
+      context(song.id),
+    );
+    assert.equal(noAccessToken.status, 401);
+
+    const publicOverwrite = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { shareToken: song.share_token, mimeType: "video/mp4", size: 1024 }, "", "POST"),
+      context(song.id),
+    );
+    assert.equal(publicOverwrite.status, 409);
+
+    const ownerReplacement = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { mimeType: "video/mp4", size: 1024 }, "owner-token", "POST"),
+      context(song.id),
+    );
+    assert.equal(ownerReplacement.status, 200);
+    assert.equal((await ownerReplacement.json()).upsert, true);
+
+    const tooLarge = await createLyricVideoUpload(
+      request(`/api/songs/${song.id}/lyric-video/upload`, { mimeType: "video/mp4", size: 52 * 1024 * 1024 }, "owner-token", "POST"),
+      context(song.id),
+    );
+    assert.equal(tooLarge.status, 413);
   });
 
   it("completes checkout, editable lyrics, approval, generation, public listening, and the owner dashboard", async () => {

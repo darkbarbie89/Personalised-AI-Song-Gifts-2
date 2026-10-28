@@ -28,8 +28,11 @@ import type {
   DashboardSnapshot,
   GenerateLyricsInput,
   GenerateSongInput,
+  GetLyricVideoParams,
   GetSongVideoAssetParams,
   HealthStatus,
+  LyricVideoUploadInput,
+  LyricVideoUploadTarget,
   LyricsResult,
   SessionResult,
   SharedSong,
@@ -979,6 +982,184 @@ export const useApproveLyrics = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getApproveLyricsMutationOptions(options));
     }
+
+export const getCreateLyricVideoUploadUrl = (songId: string,) => {
+
+
+
+
+  return `/api/songs/${songId}/lyric-video/upload`
+}
+
+/**
+ * @summary Create a secure direct-upload URL for a saved lyric video
+ */
+export const createLyricVideoUpload = async (songId: string,
+    lyricVideoUploadInput: LyricVideoUploadInput, options?: Parameters<typeof customFetch>[1]): Promise<LyricVideoUploadTarget> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<LyricVideoUploadTarget>(getCreateLyricVideoUploadUrl(songId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(lyricVideoUploadInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLyricVideoUploadMutationKey = () => ['createLyricVideoUpload'] as const;
+
+export const getCreateLyricVideoUploadMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLyricVideoUpload>>, TError,CreateLyricVideoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLyricVideoUpload>>, TError,CreateLyricVideoUploadMutationVariables, TContext> => {
+
+const mutationKey = getCreateLyricVideoUploadMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLyricVideoUpload>>, CreateLyricVideoUploadMutationVariables> = (props) => {
+          const {songId,data} = props ?? {};
+
+          return  createLyricVideoUpload(songId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLyricVideoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof createLyricVideoUpload>>>
+    export type CreateLyricVideoUploadMutationBody = BodyType<LyricVideoUploadInput>
+    export type CreateLyricVideoUploadMutationError = ErrorType<void>
+    export type CreateLyricVideoUploadMutationVariables = {songId: string;data: BodyType<LyricVideoUploadInput>}
+
+    /**
+ * @summary Create a secure direct-upload URL for a saved lyric video
+ */
+export const useCreateLyricVideoUpload = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLyricVideoUpload>>, TError,CreateLyricVideoUploadMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLyricVideoUpload>>,
+        TError,
+        CreateLyricVideoUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateLyricVideoUploadMutationOptions(options));
+    }
+
+export const getGetLyricVideoUrl = (songId: string,
+    params?: GetLyricVideoParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/songs/${songId}/lyric-video?${stringifiedParams}` : `/api/songs/${songId}/lyric-video`
+}
+
+/**
+ * @summary Open a saved lyric video after checking song ownership or its share token
+ */
+export const getLyricVideo = async (songId: string,
+    params?: GetLyricVideoParams, options?: Parameters<typeof customFetch>[1]): Promise<unknown> => {
+
+  return customFetch<unknown>(getGetLyricVideoUrl(songId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLyricVideoQueryKey = (songId: string,
+    params?: GetLyricVideoParams,) => {
+    return [
+    `/api/songs/${songId}/lyric-video`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetLyricVideoQueryOptions = <TData = Awaited<ReturnType<typeof getLyricVideo>>, TError = ErrorType<void>>(songId: string,
+    params?: GetLyricVideoParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLyricVideo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLyricVideoQueryKey(songId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLyricVideo>>> = ({ signal }) => getLyricVideo(songId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: songId !== null && songId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLyricVideo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLyricVideoQueryResult = NonNullable<Awaited<ReturnType<typeof getLyricVideo>>>
+export type GetLyricVideoQueryError = ErrorType<void>
+
+
+/**
+ * @summary Open a saved lyric video after checking song ownership or its share token
+ */
+
+export function useGetLyricVideo<TData = Awaited<ReturnType<typeof getLyricVideo>>, TError = ErrorType<void>>(
+ songId: string,
+    params?: GetLyricVideoParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLyricVideo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLyricVideoQueryOptions(songId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getStartSongGenerationUrl = () => {
 

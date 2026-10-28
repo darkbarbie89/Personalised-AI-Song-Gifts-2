@@ -18,6 +18,8 @@ Create a Vercel project for this repository, set its root directory to `artifact
 
 Supabase needs all three variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (email/password login), and `SUPABASE_SERVICE_ROLE_KEY` (server-only database/storage). The URL must resolve and the keys must belong to that project. Never expose the service-role key in a `NEXT_PUBLIC_*` variable. Set Supabase Auth's Site URL and allowed redirects for the Vercel production domain and any preview domains used for testing.
 
+Lyric videos are uploaded directly from the browser into a private `singagift-lyric-videos` Supabase Storage bucket. The app creates the bucket the first time a video is saved; videos must be MP4 or WebM and at most 50 MB. Gift-page playback and downloads are authorized by the song's share token and use short-lived private URLs.
+
 Register `https://<your-domain>/api/webhooks/stripe` as a Stripe webhook endpoint for `checkout.session.completed` and `checkout.session.async_payment_succeeded`, then copy its signing secret into `STRIPE_WEBHOOK_SECRET`. Test and live endpoints have different signing secrets. Generation/status routes declare Vercel function durations explicitly and poll the provider; they do not rely on an in-memory background job surviving a serverless request.
 
 ## Verification

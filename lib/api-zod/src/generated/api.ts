@@ -108,6 +108,7 @@ export const CompleteCheckoutResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "shareToken": zod.string().uuid(),
   "status": zod.enum(['draft', 'generating_lyrics', 'lyrics_ready', 'generating_song', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
@@ -168,6 +169,7 @@ export const ListMySongsResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "shareToken": zod.string().uuid(),
   "status": zod.enum(['draft', 'generating_lyrics', 'lyrics_ready', 'generating_song', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
@@ -198,6 +200,7 @@ export const GetSongResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "shareToken": zod.string().uuid(),
   "status": zod.enum(['draft', 'generating_lyrics', 'lyrics_ready', 'generating_song', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
@@ -249,10 +252,56 @@ export const ApproveLyricsResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "shareToken": zod.string().uuid(),
   "status": zod.enum(['draft', 'generating_lyrics', 'lyrics_ready', 'generating_song', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary Create a secure direct-upload URL for a saved lyric video
+ */
+export const CreateLyricVideoUploadParams = zod.object({
+  "songId": zod.coerce.string().uuid()
+})
+
+export const createLyricVideoUploadBodySizeMax = 52428800;
+
+
+
+export const CreateLyricVideoUploadBody = zod.object({
+  "shareToken": zod.string().uuid().optional(),
+  "mimeType": zod.enum(['video/mp4', 'video/webm']),
+  "size": zod.number().int().min(1).max(createLyricVideoUploadBodySizeMax)
+})
+
+export const createLyricVideoUploadResponseMaxBytesMax = 52428800;
+
+
+
+export const CreateLyricVideoUploadResponse = zod.object({
+  "uploadUrl": zod.string().url(),
+  "uploadToken": zod.string(),
+  "mimeType": zod.enum(['video/mp4', 'video/webm']),
+  "upsert": zod.boolean(),
+  "maxBytes": zod.number().int().max(createLyricVideoUploadResponseMaxBytesMax)
+})
+
+
+/**
+ * @summary Open a saved lyric video after checking song ownership or its share token
+ */
+export const GetLyricVideoParams = zod.object({
+  "songId": zod.coerce.string().uuid()
+})
+
+export const GetLyricVideoQueryParams = zod.object({
+  "shareToken": zod.coerce.string().uuid().optional(),
+  "download": zod.enum(['1']).optional()
+})
+
+export const GetLyricVideoResponse = zod.void()
 
 
 /**
@@ -287,6 +336,7 @@ export const StartSongGenerationResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "shareToken": zod.string().uuid(),
   "status": zod.enum(['draft', 'generating_lyrics', 'lyrics_ready', 'generating_song', 'completed', 'failed']),
   "createdAt": zod.coerce.date()
@@ -308,6 +358,7 @@ export const GetSharedSongResponse = zod.object({
   "songUrl": zod.string().url().nullable(),
   "alternateSongUrl": zod.string().url().nullable(),
   "coverArtUrl": zod.string().url().nullable(),
+  "lyricVideoUrl": zod.string().url().nullable(),
   "lyrics": zod.string().nullable(),
   "title": zod.string(),
   "status": zod.enum(['generating_song', 'completed'])

@@ -227,6 +227,68 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Song"
+  /songs/{songId}/lyric-video/upload:
+    post:
+      operationId: createLyricVideoUpload
+      tags: [songs]
+      summary: Create a secure direct-upload URL for a saved lyric video
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LyricVideoUploadInput"
+      responses:
+        "200":
+          description: Short-lived direct upload authorization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LyricVideoUploadTarget"
+        "401":
+          description: Sign in or provide the matching gift share token
+        "409":
+          description: Song not ready or public gift already has a saved video
+        "413":
+          description: Video exceeds the storage limit
+  /songs/{songId}/lyric-video:
+    get:
+      operationId: getLyricVideo
+      tags: [songs]
+      summary: Open a saved lyric video after checking song ownership or its share token
+      parameters:
+        - name: songId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: shareToken
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: download
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["1"]
+      responses:
+        "307":
+          description: Redirect to a short-lived private video URL
+        "401":
+          description: Sign in or provide the matching gift share token
+        "404":
+          description: Saved video not found
   /generate-song:
     post:
       operationId: startSongGeneration
@@ -457,6 +519,37 @@ components:
           minLength: 20
           maxLength: 5000
       required: [lyrics]
+    LyricVideoUploadInput:
+      type: object
+      required: [mimeType, size]
+      properties:
+        shareToken:
+          type: string
+          format: uuid
+        mimeType:
+          type: string
+          enum: [video/mp4, video/webm]
+        size:
+          type: integer
+          minimum: 1
+          maximum: 52428800
+    LyricVideoUploadTarget:
+      type: object
+      required: [uploadUrl, uploadToken, mimeType, upsert, maxBytes]
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        uploadToken:
+          type: string
+        mimeType:
+          type: string
+          enum: [video/mp4, video/webm]
+        upsert:
+          type: boolean
+        maxBytes:
+          type: integer
+          maximum: 52428800
     Song:
       type: object
       properties:
@@ -488,6 +581,9 @@ components:
         coverArtUrl:
           type: ["string", "null"]
           format: uri
+        lyricVideoUrl:
+          type: ["string", "null"]
+          format: uri
         shareToken:
           type: string
           format: uuid
@@ -510,6 +606,7 @@ components:
         - songUrl
         - alternateSongUrl
         - coverArtUrl
+        - lyricVideoUrl
         - shareToken
         - status
         - createdAt
@@ -548,6 +645,9 @@ components:
         coverArtUrl:
           type: ["string", "null"]
           format: uri
+        lyricVideoUrl:
+          type: ["string", "null"]
+          format: uri
         lyrics:
           type: ["string", "null"]
         title:
@@ -563,6 +663,7 @@ components:
         - songUrl
         - alternateSongUrl
         - coverArtUrl
+        - lyricVideoUrl
         - lyrics
         - title
         - status

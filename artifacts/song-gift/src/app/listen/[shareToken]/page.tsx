@@ -131,7 +131,24 @@ export default function ListenPage() {
         <p className="hint">The person who made this gift is putting the finishing touches on it. Come back soon to hear it.</p>
       </section>}
     </div>
-    {ready && data.lyrics && <LyricVideoMaker song={data} shareToken={shareToken}/>}
+    {ready && data.lyricVideoUrl && <section className="listen-saved-video" aria-labelledby="saved-video-title">
+      <div className="listen-saved-video-head">
+        <div>
+          <p className="eyebrow">A little something extra</p>
+          <h2 className="display" id="saved-video-title">The song, with its words.</h2>
+          <p className="hint">Watch the lyric video made for this gift.</p>
+        </div>
+        <a className="btn secondary" href={`${data.lyricVideoUrl}&download=1`}><Download size={15}/> Download video</a>
+      </div>
+      <video className="listen-saved-video-player" controls playsInline preload="metadata" src={data.lyricVideoUrl}>
+        Your browser does not support video playback.
+      </video>
+    </section>}
+    {ready && data.lyrics && <LyricVideoMaker
+      song={data}
+      shareToken={shareToken}
+      onVideoSaved={() => { void refetch(); }}
+    />}
     <div className="listen-cta">
       <p className="hint">A personal story, shared between people who matter.</p>
       <Link href="/" className="btn secondary">Make a song for someone <ArrowRight size={15}/></Link>

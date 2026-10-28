@@ -15,11 +15,11 @@ The music provider's documented Suno track result supplies audio, artwork, and d
 
 **How to apply:** Do not describe estimates as automatically synchronized. Accurate automatic synchronization requires a separately verified alignment source.
 
-The initial video feature exports locally in the browser rather than introducing a paid video-rendering service or claiming that exported files are saved to the user's account.
+Lyric videos are rendered in the browser, then can be saved to the app's private Supabase Storage bucket. Gift-page playback is authorized with the matching share token and short-lived signed URLs; direct public object URLs are not used.
 
-**Why:** This provides downloadable full-song videos without adding another service or changing the existing storage system.
+**Why:** The user asked that videos remain available on the gift page after the creator leaves, while keeping the existing song media and database setup intact.
 
-**How to apply:** Explain browser-format limitations. Treat cloud persistence and recipient video playback as explicit new capabilities, not existing behavior.
+**How to apply:** Keep local download available as a fallback. The video bucket is provisioned on first save, accepts MP4/WebM up to 50 MB, and should remain private. Do not describe locally rendered output as saved until the upload succeeds.
 
 The lyric-video maker should be available from the completed public gift page as well as the owner's studio.
 

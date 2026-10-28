@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jsonError, configurationError } from "@/lib/server/http";
 import { getAdminSupabase } from "@/lib/server/supabase";
 import { refreshSongFromApiframe } from "@/lib/server/apiframe";
+import { findStoredLyricVideo, lyricVideoContentType, lyricVideoPageUrl } from "@/lib/server/lyric-video-storage";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,10 @@ export async function GET(
     if (!["generating_song", "completed"].includes(song.status)) {
       return jsonError("This gift is not ready to be shared yet.", 404);
     }
+    const storedVideo = song.status === "completed" ? await findStoredLyricVideo(song.id) : null;
+    const lyricVideoUrl = storedVideo && lyricVideoContentType(storedVideo)
+      ? lyricVideoPageUrl(request.nextUrl.origin, song.id, shareToken)
+      : null;
     return NextResponse.json({
       id: song.id,
       recipientName: song.recipient_name,
@@ -34,6 +39,7 @@ export async function GET(
       alternateSongUrl: song.alternate_song_url,
       coverArtUrl: song.cover_art_url,
       lyrics: song.status === "completed" && typeof song.lyrics === "string" ? song.lyrics : null,
+      lyricVideoUrl,
       title: `${song.recipient_name} — a song made just for you`,
       status: song.status,
     });
