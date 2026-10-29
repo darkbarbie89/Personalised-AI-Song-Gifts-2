@@ -27,6 +27,12 @@ The lyric-video maker should be available from the completed public gift page as
 
 **How to apply:** Show a clear maker entry point only when the shared song is completed, has lyrics, and has no saved lyric video. Public media access must be authorized by that song's matching share token.
 
+The gift page should show one active media player at a time: original audio by default, alternate audio through the same player, and a saved lyric video as a switchable view.
+
+**Why:** The user wants the recipient page to feel like a premium gift, not a list of multiple songs and players.
+
+**How to apply:** Keep alternate audio and saved lyric video accessible without rendering their players at the same time.
+
 Do not assume that a MediaRecorder MP4 container contains H.264 video and AAC audio.
 
 **Why:** Browser verification produced a valid MP4 using VP9/Opus when only the generic `video/mp4` MIME type was selected. That file played in the test browser but may not play in a recipient's phone gallery.

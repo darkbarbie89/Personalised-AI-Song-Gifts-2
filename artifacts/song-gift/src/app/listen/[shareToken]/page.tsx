@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { getGetSharedSongQueryKey, useGetSharedSong } from "@workspace/api-client-react";
 import { QRCodeCanvas } from "qrcode.react";
-import { ArrowRight, Copy, Download, Music2, QrCode, Share2 } from "lucide-react";
+import { ArrowRight, Copy, Download, Headphones, Music2, QrCode, Share2, Video } from "lucide-react";
 import { ErrorState, Footer, LoadingState, Nav } from "@/components/shared";
 import LyricVideoMaker from "@/components/lyric-video-maker";
 
@@ -14,6 +14,8 @@ export default function ListenPage() {
   const [shareStatus, setShareStatus] = useState("");
   const [shareUrl, setShareUrl] = useState("");
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [audioVersion, setAudioVersion] = useState<"original" | "alternate">("original");
+  const [mediaMode, setMediaMode] = useState<"audio" | "video">("audio");
   const qrContainerRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isError, refetch } = useGetSharedSong(shareToken, { query: { queryKey: getGetSharedSongQueryKey(shareToken), refetchInterval: query => query.state.data?.status === "generating_song" ? 6000 : false } });
 
@@ -79,28 +81,42 @@ export default function ListenPage() {
   if (isLoading) return <><Nav/><LoadingState label="Opening a song made just for you…"/></>;
   if (isError || !data) return <><Nav/><div className="shell" style={{ padding: "45px 0" }}><ErrorState retry={() => refetch()} message="This listening page isn’t available right now. Ask the person who shared it to send the link again."/></div></>;
   const ready = data.status === "completed" && !!data.songUrl;
+  const hasSavedVideo = ready && !!data.lyricVideoUrl;
+  const selectedAudioUrl = audioVersion === "alternate" && data.alternateSongUrl
+    ? data.alternateSongUrl
+    : data.songUrl;
   return <main><Nav/><section className="shell listen-page">
     <header className="listen-intro">
-      <p className="eyebrow">A song gift, for you</p>
-      <h1 className="display">{data.recipientName}, this one is yours.</h1>
-      <p className="listen-byline">Made with love by {data.senderName} <span aria-hidden="true">·</span> {data.occasion}</p>
+      <p className="eyebrow">A keepsake, set to music</p>
+      <h1 className="display">For {data.recipientName}, with love.</h1>
+      <p className="listen-byline">A song made by <strong>{data.senderName}</strong><span aria-hidden="true">·</span>{data.occasion}</p>
     </header>
     <div className={`listen-layout${ready ? "" : " is-pending"}`}>
       <div className="listen-cover">
         {data.coverArtUrl ? <img src={data.coverArtUrl} alt={`Artwork for ${data.title}`} /> : <div className="cover-placeholder"><span>{data.title}</span></div>}
       </div>
       {ready ? <section className="listen-player-card" aria-labelledby="listen-title">
-        <p className="eyebrow">Made especially for you</p>
+        <p className="eyebrow">A song to keep</p>
         <h2 className="display listen-title" id="listen-title">{data.title}</h2>
-        <div className="listen-track">
-          <label htmlFor="listen-primary">Original version</label>
-          <audio id="listen-primary" className="audio-player" controls autoPlay preload="metadata" aria-label={`${data.title}, original version`} src={data.songUrl ?? undefined}>Your browser does not support audio playback.</audio>
-        </div>
-        {data.alternateSongUrl && <div className="listen-track">
-          <label htmlFor="listen-alternate">An alternate take</label>
-          <audio id="listen-alternate" className="audio-player" controls preload="metadata" aria-label={`${data.title}, alternate take`} src={data.alternateSongUrl}>Your browser does not support audio playback.</audio>
+        {hasSavedVideo && <div className="listen-media-switch" role="group" aria-label="Choose how to enjoy this gift">
+          <button type="button" className={mediaMode === "audio" ? "active" : ""} aria-pressed={mediaMode === "audio"} onClick={() => setMediaMode("audio")}><Headphones size={15}/> Listen</button>
+          <button type="button" className={mediaMode === "video" ? "active" : ""} aria-pressed={mediaMode === "video"} onClick={() => setMediaMode("video")}><Video size={15}/> Watch lyrics</button>
         </div>}
-        <p className="listen-note">A story remembered. A song to come back to.</p>
+        {mediaMode === "video" && hasSavedVideo ? <div className="listen-media-frame">
+          <video key={data.lyricVideoUrl} className="listen-saved-video-player" controls playsInline preload="metadata" src={data.lyricVideoUrl ?? undefined}>
+            Your browser does not support video playback.
+          </video>
+        </div> : <div className="listen-track">
+          <div className="listen-track-heading">
+            <label htmlFor="listen-audio">Listen to the {audioVersion === "original" ? "original" : "alternate"} version</label>
+            {data.alternateSongUrl && <div className="listen-version-switch" role="group" aria-label="Choose song version">
+              <button type="button" className={audioVersion === "original" ? "active" : ""} aria-pressed={audioVersion === "original"} onClick={() => setAudioVersion("original")}>Original</button>
+              <button type="button" className={audioVersion === "alternate" ? "active" : ""} aria-pressed={audioVersion === "alternate"} onClick={() => setAudioVersion("alternate")}>Alternate take</button>
+            </div>}
+          </div>
+          <audio key={selectedAudioUrl} id="listen-audio" className="audio-player" controls preload="metadata" aria-label={`${data.title}, ${audioVersion === "original" ? "original version" : "alternate take"}`} src={selectedAudioUrl ?? undefined}>Your browser does not support audio playback.</audio>
+        </div>}
+        <p className="listen-note">A little piece of your story, made into something you can return to.</p>
         <div className="listen-share-tools">
           <div className="listen-share-buttons">
             <button type="button" className="btn" onClick={shareGift}><Share2 size={16}/> Share song</button>
@@ -131,26 +147,16 @@ export default function ListenPage() {
         <p className="hint">The person who made this gift is putting the finishing touches on it. Come back soon to hear it.</p>
       </section>}
     </div>
-    {ready && data.lyricVideoUrl && <section className="listen-saved-video" aria-labelledby="saved-video-title">
-      <div className="listen-saved-video-head">
-        <div>
-          <p className="eyebrow">A little something extra</p>
-          <h2 className="display" id="saved-video-title">The song, with its words.</h2>
-          <p className="hint">Watch the lyric video made for this gift.</p>
-        </div>
-        <a className="btn secondary" href={`${data.lyricVideoUrl}&download=1`}><Download size={15}/> Download video</a>
-      </div>
-      <video className="listen-saved-video-player" controls playsInline preload="metadata" src={data.lyricVideoUrl}>
-        Your browser does not support video playback.
-      </video>
-    </section>}
+    {hasSavedVideo && <div className="listen-video-download">
+      <a className="btn ghost" href={`${data.lyricVideoUrl}&download=1`}><Download size={15}/> Download lyric video</a>
+    </div>}
     {ready && data.lyrics && !data.lyricVideoUrl && <LyricVideoMaker
       song={data}
       shareToken={shareToken}
       onVideoSaved={() => { void refetch(); }}
     />}
     <div className="listen-cta">
-      <p className="hint">A personal story, shared between people who matter.</p>
+      <p className="hint">Made with care by {data.senderName}, especially for {data.recipientName}.</p>
       <Link href="/" className="btn secondary">Make a song for someone <ArrowRight size={15}/></Link>
     </div>
   </section><Footer/></main>;
